@@ -4,6 +4,7 @@ import { chocolateList } from "../../utils/chocolateList";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { ChocolateType } from "../../types/chocolateType";
+import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
 
 export default function Management() {
   const [chocolate, setChocolate] = useState<ChocolateType[]>([]);
@@ -11,6 +12,8 @@ export default function Management() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [lifeWeeks, setLifeWeeks] = useState("");
+  const [barcode, setBarcode] = useState("");
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
@@ -32,9 +35,11 @@ export default function Management() {
     e.preventDefault();
     if (!name.trim() || !lifeWeeks) return;
 
-    const { error } = await supabase
-      .from("chocolate_type")
-      .insert({ name: name.trim(), week_lifetime: parseInt(lifeWeeks) });
+    const { error } = await supabase.from("chocolate_type").insert({
+      name: name.trim(),
+      week_lifetime: parseInt(lifeWeeks),
+      barcode: barcode.trim() || null,
+    });
 
     if (error) {
       showToast("Erreur lors de l'ajout du type.", "error");
@@ -43,6 +48,7 @@ export default function Management() {
     setName("");
     setLifeWeeks("");
     setShowForm(false);
+    setBarcode("");
     fetchChocolateTypes();
     showToast("Type ajouté avec succès !");
   };
@@ -69,6 +75,12 @@ export default function Management() {
     const found = chocolateList.find((c) => c.name === selectedName);
     if (found) setLifeWeeks(String(found.life_weeks));
     else setLifeWeeks("");
+  };
+
+  const handleScan = (result: string) => {
+    setBarcode(result);
+    setShowBarcodeScanner(false);
+    showToast("Code-barres scanné !");
   };
 
   return (
@@ -180,7 +192,33 @@ export default function Management() {
                 />
               </div>
             </div>
+            <div className="mb-4">
+              <label className="text-sm text-stone-500 mb-1 block">
+                Code-barres (optionnel)
+              </label>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={barcode}
+                  onChange={(e) => setBarcode(e.target.value)}
+                  placeholder="ex. 2800118009449"
+                  className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-600"
+                />
+                <button
+                  onClick={() => setShowBarcodeScanner(true)}
+                  className="bg-amber-800 text-white px-3 rounded-lg text-lg"
+                >
+                  📷
+                </button>
+              </div>
+            </div>
 
+            {showBarcodeScanner && (
+              <BarcodeScanner
+                onScan={handleScan}
+                onClose={() => setShowBarcodeScanner(false)}
+              />
+            )}
             <button
               onClick={addType}
               disabled={!name}
