@@ -1,10 +1,13 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabase";
 
+import Toast from "../../components/Toast";
+import { useToast } from "../../hooks/useToast";
+
 interface ChocolateType {
   id: string;
   name: string;
-  life_weeks: number;
+  week_lifetime: number;
   created_at: string;
 }
 
@@ -65,11 +68,13 @@ const chocolateList: Chocolate[] = [
 ];
 
 export default function Management() {
-  const [types, setTypes] = useState<ChocolateType[]>([]);
+  const [chocolate, setChocolate] = useState<ChocolateType[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [lifeWeeks, setLifeWeeks] = useState("");
+
+  const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
     fetchTypes();
@@ -80,32 +85,38 @@ export default function Management() {
       .from("chocolate_type")
       .select("*")
       .order("name");
-    if (!error) setTypes(data || []);
+    if (!error) setChocolate(data || []);
     setLoading(false);
   };
 
-const addType = async (e: React.FormEvent<HTMLButtonElement>) => {
-  e.preventDefault();
-  if (!name.trim() || !lifeWeeks) return;
-  
-  const { error } = await supabase
-    .from("chocolate_type")
-    .insert({ name: name.trim(), life_weeks: parseInt(lifeWeeks) });
-  
-  console.log("error:", error);
-  
-  setName("");
-  setLifeWeeks("");
-  setShowForm(false);
-  fetchTypes();
-}
+  const addType = async (e: React.FormEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    if (!name.trim() || !lifeWeeks) return;
+
+    const { error } = await supabase
+      .from("chocolate_type")
+      .insert({ name: name.trim(), week_lifetime: parseInt(lifeWeeks) });
+
+    if (error) {
+      showToast("Erreur lors de l'ajout du type.", "error");
+      return;
+    }
+    console.log("Type ajouté:", name, lifeWeeks);
+    setName("");
+    setLifeWeeks("");
+    fetchTypes();
+    showToast("Type ajouté avec succès !");
+  };
 
   async function deleteType(id: string) {
     const { error } = await supabase
       .from("chocolate_type")
       .delete()
       .eq("id", id);
-    if (!error) fetchTypes();
+    if (!error) {
+      fetchTypes();
+      showToast("Chocolat supprimé avec succès !");
+    }
   }
   const handleSelectChocolate = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedName = e.target.value;
@@ -120,7 +131,6 @@ const addType = async (e: React.FormEvent<HTMLButtonElement>) => {
         <h1 className="text-xl font-bold">Gérer</h1>
         <p className="text-amber-200 text-sm mt-1">Types de chocolat</p>
       </div>
-
       <div className="px-4 mt-6">
         <button
           onClick={() => setShowForm(!showForm)}
@@ -175,26 +185,26 @@ const addType = async (e: React.FormEvent<HTMLButtonElement>) => {
           <p className="text-center text-stone-400 text-sm mt-8">
             Chargement...
           </p>
-        ) : types.length === 0 ? (
+        ) : chocolate.length === 0 ? (
           <p className="text-center text-stone-400 text-sm mt-8">
             Aucun type de chocolat — commence par en ajouter un.
           </p>
         ) : (
           <ul className="flex flex-col gap-3">
-            {types.map((type) => (
+            {chocolate.map((choco) => (
               <li
-                key={type.id}
+                key={choco.id}
                 className="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-200 flex items-center justify-between"
               >
                 <div>
-                  <p className="font-medium text-stone-800">{type.name}</p>
+                  <p className="font-medium text-stone-800">{choco.name}</p>
                   <p className="text-xs text-stone-400 mt-0.5">
-                    Durée de vie : {type.life_weeks} semaines · retrait à{" "}
-                    {type.life_weeks - 2} sem.
+                    Durée de vie : {choco.week_lifetime} semaines · retrait à{" "}
+                    {choco.week_lifetime - 2} sem.
                   </p>
                 </div>
                 <button
-                  onClick={() => deleteType(type.id)}
+                  onClick={() => deleteType(choco.id)}
                   className="text-red-400 hover:text-red-600 text-lg px-2"
                   title="Supprimer"
                 >
@@ -205,6 +215,9 @@ const addType = async (e: React.FormEvent<HTMLButtonElement>) => {
           </ul>
         )}
       </div>
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
     </div>
   );
 }
