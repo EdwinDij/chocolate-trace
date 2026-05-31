@@ -11,27 +11,26 @@ export default function BarcodeScanner({
   onClose,
 }: BarcodeScannerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
-  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+  const controlsRef = useRef<{ stop: () => void } | null>(null);
 
   useEffect(() => {
     const reader = new BrowserMultiFormatReader();
-    readerRef.current = reader;
 
-    reader.decodeFromVideoDevice(
-      undefined,
-      videoRef.current!,
-      (result, err) => {
+    reader
+      .decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
         if (result) {
-          console.log("Barcode detected:", result);
+          onScan(result.getText());
+          controlsRef.current?.stop();
         }
-      },
-    );
+      })
+      .then((controls) => {
+        controlsRef.current = controls;
+      });
 
-    // return () => {
-    //   readerRef.current?.reset();
-    // };
+    return () => {
+      controlsRef.current?.stop();
+    };
   }, [onScan]);
-
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center">
       <div className="relative w-full max-w-sm mx-4">
