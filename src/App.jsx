@@ -1,7 +1,7 @@
 import "./App.css";
 import Navbar from "./components/navbar/Navbar";
 import Tracking from "./Pages/tracking/Tracking";
-import Alerts from "./Pages/alerts/Alerts";
+import Dashboard from "./Pages/dashboard/Dashboard";
 import Management from "./Pages/management/Management";
 import { Routes, Route } from "react-router-dom";
 // import { computeBatchesDates } from "./utils/dates";
@@ -12,7 +12,7 @@ function App() {
       <div className="App">
         <Routes>
           <Route path="/" element={<Tracking />} />
-          <Route path="/alertes" element={<Alerts />} />
+          <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/gestion" element={<Management />} />
         </Routes>
         <Navbar />

@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 export default function Navbar() {
   const tabs = [
     { path: "/", label: "Suivi", icon: "📦" },
-    { path: "/alertes", label: "Alertes", icon: "⚠️" },
+    { path: "/dashboard", label: "Dashboard", icon: "⚠️" },
     { path: "/gestion", label: "Gérer", icon: "⚙️" },
   ];
   return (
