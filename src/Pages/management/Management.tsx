@@ -82,8 +82,12 @@ export default function Management() {
     else setLifeWeeks("");
   };
 
-  const handleScan = (result: string) => {
-    setBarcode(result);
+  const handleBarcodeScan = (result: string) => {
+    if (editingId) {
+      setEditBarcode(result);
+    } else {
+      setBarcode(result);
+    }
     setShowBarcodeScanner(false);
     showToast("Code-barres scanné !");
   };
@@ -109,15 +113,7 @@ export default function Management() {
       fetchChocolateTypes();
     }
   };
-  const handleBarcodeScan = (result: string) => {
-    if (editingId) {
-      setEditBarcode(result);
-    } else {
-      setBarcode(result);
-    }
-    setShowBarcodeScanner(false);
-    showToast("Code-barres scanné !");
-  };
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
       {/* Header en Cohérence avec Alertes */}
@@ -250,7 +246,7 @@ export default function Management() {
 
             {showBarcodeScanner && (
               <BarcodeScanner
-                onScan={handleScan}
+                onScan={handleBarcodeScan}
                 onClose={() => setShowBarcodeScanner(false)}
               />
             )}
@@ -365,6 +361,12 @@ export default function Management() {
           )}
         </div>
       </div>
+      {showBarcodeScanner && (
+        <BarcodeScanner
+          onScan={handleBarcodeScan}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
