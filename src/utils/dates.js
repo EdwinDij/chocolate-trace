@@ -54,11 +54,11 @@ export function formatDate(date) {
 //   @returns {{ expiryWeek, withdrawalWeek, weeksUntilWithdrawal, status }}
 //
 
-export function computeBatchesDates(weekOpening, lifeWeeks) {
-  const openingDate = parseWeekLabel(weekOpening);
-  if (!openingDate) return null;
+export function computeBatchesDates(weekReceiving, lifeWeeks) {
+  const receivingDate = parseWeekLabel(weekReceiving);
+  if (!receivingDate) return null;
 
-  const expiryDate = addWeeks(openingDate, lifeWeeks);
+  const expiryDate = addWeeks(receivingDate, lifeWeeks);
   const withdrawalDate = addWeeks(expiryDate, -WITHDRAWAL_WEEKS);
   const weeksUntilWithdrawal = weekDiff(new Date(), withdrawalDate);
 
@@ -94,7 +94,13 @@ export function getStatusStyle(status) {
       };
     case "ok":
       return { bg: "bg-green-100", text: "text-green-700", label: "OK" };
+    case "ouvert":
+      return { bg: "bg-amber-100", text: "text-amber-700", label: "Ouvert" };
+    case "stock":
+      return { bg: "bg-stone-100", text: "text-stone-500", label: "En stock" };
+    case "perime":
+      return { bg: "bg-red-100", text: "text-red-400", label: "Périmé" };
     default:
-      return { bg: "bg-stone-100", text: "text-stone-500", label: "Fermé" };
+      return { bg: "bg-stone-100", text: "text-stone-500", label: "—" };
   }
 }

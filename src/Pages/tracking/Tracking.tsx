@@ -1,8 +1,11 @@
-// src/pages/Suivi.tsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
-import { computeBatchesDates, getCurrentWeekLabel } from "../../utils/dates";
+import {
+  computeBatchesDates,
+  getCurrentWeekLabel,
+  getStatusStyle,
+} from "../../utils/dates";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { ChocolateType } from "../management/Management";
@@ -27,8 +30,7 @@ const FILTERS = [
   "En stock",
   "Ouverts",
   "Périmés",
-  "Épuisés",
-  "A retirer",
+  "À retirer",
 ] as const;
 type Filter = (typeof FILTERS)[number];
 
@@ -147,11 +149,10 @@ export default function Suivi() {
     if (filter === "En stock") return b.status === "stock";
     if (filter === "Ouverts") return b.status === "ouvert";
     if (filter === "Périmés") return b.status === "perime";
-    if (filter === "Épuisés") return b.status === "epuise";
-    if (filter === "A retirer") {
+    if (filter === "À retirer") {
       if (!b.week_opening) return false;
       const dates = computeBatchesDates(
-        b.week_opening,
+        b.week_receiving ,
         b.chocolate_type.week_lifetime,
       );
       return dates?.status === "expired" || dates?.status === "warning";
@@ -160,35 +161,18 @@ export default function Suivi() {
   });
 
   const getStatusInfo = (batch: Batch) => {
-    if (!batch.week_opening || batch.status === "stock") {
-      return { label: "En stock", bg: "bg-stone-100", text: "text-stone-500" };
-    }
-    if (batch.status === "archive") {
-      return { label: "Archivé", bg: "bg-stone-100", text: "text-stone-400" };
-    }
-    if (batch.status === "perime") {
-      return { label: "Périmé", bg: "bg-red-100", text: "text-red-400" };
-    }
-    if (batch.status === "epuise") {
-      return { label: "Épuisé", bg: "bg-stone-100", text: "text-stone-400" };
-    }
+    if (batch.status === "stock" || !batch.week_opening)
+      return getStatusStyle("stock");
+    if (batch.status === "perime") return getStatusStyle("perime");
+
     const dates = computeBatchesDates(
-      batch.week_opening,
+      batch.week_receiving ,
       batch.chocolate_type.week_lifetime,
     );
-    if (!dates)
-      return { label: "—", bg: "bg-stone-100", text: "text-stone-400" };
-    if (dates.status === "expired")
-      return { label: "À retirer", bg: "bg-red-100", text: "text-red-600" };
-    if (dates.status === "warning")
-      return {
-        label: "À surveiller",
-        bg: "bg-amber-100",
-        text: "text-amber-600",
-      };
-    return { label: "OK", bg: "bg-green-100", text: "text-green-700" };
-  };
+    if (!dates) return getStatusStyle("stock");
 
+    return getStatusStyle(dates.status);
+  };
   return (
     <div className="min-h-screen bg-stone-50 pb-24">
       <div className="bg-amber-800 text-white px-4 pt-10 pb-6 flex items-start justify-between">
@@ -304,9 +288,9 @@ export default function Suivi() {
         ) : (
           filteredBatches.map((batch) => {
             const statusInfo = getStatusInfo(batch);
-            const dates = batch.week_opening
+            const dates = batch.week_receiving
               ? computeBatchesDates(
-                  batch.week_opening,
+                  batch.week_receiving,
                   batch.chocolate_type.week_lifetime,
                 )
               : null;
