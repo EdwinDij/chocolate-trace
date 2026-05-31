@@ -4,7 +4,7 @@ import { supabase } from "../../utils/supabase";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 
-interface ChocolateType {
+export interface ChocolateType {
   id: string;
   name: string;
   week_lifetime: number;
@@ -77,10 +77,10 @@ export default function Management() {
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
-    fetchTypes();
+    fetchChocolateTypes();
   }, []);
 
-  const fetchTypes = async () => {
+  const fetchChocolateTypes = async () => {
     const { data, error } = await supabase
       .from("chocolate_type")
       .select("*")
@@ -104,7 +104,7 @@ export default function Management() {
     console.log("Type ajouté:", name, lifeWeeks);
     setName("");
     setLifeWeeks("");
-    fetchTypes();
+    fetchChocolateTypes();
     showToast("Type ajouté avec succès !");
   };
 
@@ -114,7 +114,7 @@ export default function Management() {
       .delete()
       .eq("id", id);
     if (!error) {
-      fetchTypes();
+      fetchChocolateTypes();
       showToast("Chocolat supprimé avec succès !");
     }
   }
