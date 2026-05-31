@@ -13,32 +13,47 @@ export default function BarcodeScanner({
   const [debugMsg, setDebugMsg] = useState("⌛ Initialisation...");
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
+  const readerRef = useRef<BrowserMultiFormatReader | null>(null);
+
 
   useEffect(() => {
-    const reader = new BrowserMultiFormatReader();
+    const constraints: MediaStreamConstraints = {
+      video: {
+        facingMode: "environment",
+        width: { ideal: 1280 },
+        height: { ideal: 720 },
+      },
+    };
 
-    reader
-      .decodeFromVideoDevice(undefined, videoRef.current!, (result, error) => {
-        if (result) {
-          setDebugMsg("✅ Lu : " + result.getText());
-          onScan(result.getText());
-          controlsRef.current?.stop();
-        }
-        if (error?.message && !error.message.includes("No MultiFormat")) {
-          setDebugMsg("❌ " + error.message);
-        }
-      })
-      .then((controls) => {
-        setDebugMsg("📷 Caméra active");
-        controlsRef.current = controls;
+    navigator.mediaDevices
+      .getUserMedia(constraints)
+      .then((stream) => {
+        videoRef.current!.srcObject = stream;
+        videoRef.current!.play();
+
+        const reader = new BrowserMultiFormatReader();
+        readerRef.current = reader;
+
+        reader
+          .decodeFromStream(stream, videoRef.current!, (result) => {
+            if (result) {
+              onScan(result.getText());
+              stream.getTracks().forEach((t) => t.stop());
+            }
+          })
+          .then((controls) => {
+            controlsRef.current = controls;
+          });
       })
       .catch((err) => {
-        setDebugMsg("💥 " + err.message);
+        console.error("Erreur caméra:", err);
       });
+
     return () => {
       controlsRef.current?.stop();
     };
   }, [onScan]);
+
   return (
     <div className="fixed inset-0 z-50 bg-black/80 flex flex-col items-center justify-center">
       <div className="relative w-full max-w-sm mx-4">
