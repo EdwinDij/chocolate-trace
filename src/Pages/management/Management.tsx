@@ -1,71 +1,9 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabase";
-
+import { chocolateList } from "../../utils/chocolateList";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
-
-export interface ChocolateType {
-  id: string;
-  name: string;
-  week_lifetime: number;
-  created_at: string;
-}
-
-interface Chocolate {
-  name: string;
-  life_weeks: number;
-}
-const life_weeks_ganache = 5;
-const life_weeks_praline = 6;
-const chocolateList: Chocolate[] = [
-  // ── GANACHES (durée de vie : 5 semaines) ──────────────────
-  { name: "Citron Noir", life_weeks: life_weeks_ganache },
-  { name: "Poivre Noir", life_weeks: life_weeks_ganache },
-  { name: "Origine République Dominicaine", life_weeks: life_weeks_ganache },
-  { name: "Origine Madagascar", life_weeks: life_weeks_ganache },
-  { name: "Origine Venezuela", life_weeks: life_weeks_ganache },
-  { name: "Coco Noir", life_weeks: life_weeks_ganache },
-  { name: "Thé Earl Grey", life_weeks: life_weeks_ganache },
-  { name: "Passion Lait", life_weeks: life_weeks_ganache },
-  { name: "Palet Or Noir", life_weeks: life_weeks_ganache },
-  { name: "Palet Moka Noir", life_weeks: life_weeks_ganache },
-  { name: "Mokamande Noir", life_weeks: life_weeks_ganache },
-  { name: "Palet Or Lait", life_weeks: life_weeks_ganache },
-  { name: "Palet Guérande", life_weeks: life_weeks_ganache },
-  { name: "Mokamande Lait", life_weeks: life_weeks_ganache },
-  { name: "Caramel", life_weeks: life_weeks_ganache },
-  { name: "Palet Mère de Famille", life_weeks: life_weeks_ganache },
-
-  // ── PRALINÉS (durée de vie : 6 semaines) ──────────────────
-  { name: "Pavé de Tours Noir", life_weeks: life_weeks_praline },
-  { name: "Pavé de Tours Lait", life_weeks: life_weeks_praline },
-  { name: "Praliné Café Noir", life_weeks: life_weeks_praline },
-  { name: "Praliné Café Lait", life_weeks: life_weeks_praline },
-  { name: "Praliné Amande Noir", life_weeks: life_weeks_praline },
-  { name: "Praliné Amande Lait", life_weeks: life_weeks_praline },
-  { name: "Praliné À l'Ancienne Noir", life_weeks: life_weeks_praline },
-  { name: "Praliné À l'Ancienne Lait", life_weeks: life_weeks_praline },
-  { name: "Praliné Noisette Noir", life_weeks: life_weeks_praline },
-  { name: "Praliné Noisette Lait", life_weeks: life_weeks_praline },
-  { name: "Praliné Pistache Noir", life_weeks: life_weeks_praline },
-  { name: "Praliné Pistache Lait", life_weeks: life_weeks_praline },
-  { name: "Praliné Sésame Noir", life_weeks: life_weeks_praline },
-  { name: "Praliné Sésame Lait", life_weeks: life_weeks_praline },
-  { name: "Rocher Praliné Noir", life_weeks: life_weeks_praline },
-  { name: "Rocher Praliné Lait", life_weeks: life_weeks_praline },
-  { name: "Chiaracrousti Noir", life_weeks: life_weeks_praline },
-  { name: "Chiaracrousti Lait", life_weeks: life_weeks_praline },
-  { name: "Amanda", life_weeks: life_weeks_praline },
-  { name: "Palet du Faubourg Noir", life_weeks: life_weeks_praline },
-  { name: "Palet du Faubourg Lait", life_weeks: life_weeks_praline },
-  { name: "Praliné Amande Noisette Noir", life_weeks: life_weeks_praline },
-  { name: "Praliné Amande Noisette Lait", life_weeks: life_weeks_praline },
-
-  // ── PÂTES D'AMANDES ───────────────────────────────────────
-  { name: "Pâte d'Amandes Pistache Noir", life_weeks: life_weeks_praline },
-  { name: "Pâte d'Amandes Pistache Lait", life_weeks: life_weeks_praline },
-  { name: "Pâte d'Amandes Noix", life_weeks: life_weeks_praline },
-];
+import { ChocolateType } from "../../types/chocolateType";
 
 export default function Management() {
   const [chocolate, setChocolate] = useState<ChocolateType[]>([]);
@@ -89,7 +27,9 @@ export default function Management() {
     setLoading(false);
   };
 
-  const addType = async (e: React.FormEvent<HTMLButtonElement>) => {
+  const addType = async (
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent,
+  ) => {
     e.preventDefault();
     if (!name.trim() || !lifeWeeks) return;
 
@@ -101,14 +41,15 @@ export default function Management() {
       showToast("Erreur lors de l'ajout du type.", "error");
       return;
     }
-    console.log("Type ajouté:", name, lifeWeeks);
     setName("");
     setLifeWeeks("");
+    setShowForm(false);
     fetchChocolateTypes();
     showToast("Type ajouté avec succès !");
   };
 
   async function deleteType(id: string) {
+    console.log("Suppression du type avec ID :", id);
     const { error } = await supabase
       .from("chocolate_type")
       .delete()
@@ -116,8 +57,13 @@ export default function Management() {
     if (!error) {
       fetchChocolateTypes();
       showToast("Chocolat supprimé avec succès !");
+    } else {
+      showToast(
+        "Erreur lors de la suppression du chocolat. Vérifiez votre dashboard",
+      );
     }
   }
+
   const handleSelectChocolate = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedName = e.target.value;
     setName(selectedName);
@@ -125,33 +71,94 @@ export default function Management() {
     if (found) setLifeWeeks(String(found.life_weeks));
     else setLifeWeeks("");
   };
+
   return (
-    <div className="min-h-screen bg-stone-50 pb-24">
-      <div className="bg-amber-800 text-white px-4 pt-10 pb-6">
-        <h1 className="text-xl font-bold">Gérer</h1>
-        <p className="text-amber-200 text-sm mt-1">Types de chocolat</p>
-      </div>
-      <div className="px-4 mt-6">
+    <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
+      {/* Header en Cohérence avec Alertes */}
+      <header className="bg-[#3E2723] text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-[#FFF8E1]">
+              Catalogue
+            </h1>
+            <p className="text-amber-200/60 text-xs mt-0.5 font-medium">
+              Gestion des recettes & durées de conservation
+            </p>
+          </div>
+          <span className="text-[10px] bg-amber-700 text-[#FFF8E1] border border-amber-600 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+            {chocolate.length} Référence{chocolate.length > 1 ? "s" : ""}
+          </span>
+        </div>
+      </header>
+
+      <div className="px-4 mt-5">
+        {/* Bouton d'action Toggle Formulaire */}
         <button
           onClick={() => setShowForm(!showForm)}
-          className="w-full bg-amber-800 text-white py-3 rounded-xl font-medium mb-4 flex items-center justify-center gap-2"
+          className={`w-full py-3 rounded-2xl font-bold text-sm tracking-wide transition-all duration-200 shadow-sm border flex items-center justify-center gap-2 active:scale-[0.98] ${
+            showForm
+              ? "bg-white text-stone-600 border-stone-200 hover:bg-stone-50"
+              : "bg-amber-800 text-[#FFF8E1] border-amber-900/20 hover:bg-amber-900"
+          }`}
         >
-          <span>{showForm ? "✕ Annuler" : "+ Nouveau type"}</span>
+          {showForm ? (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18 18 6M6 6l12 12"
+                />
+              </svg>
+              Annuler la saisie
+            </>
+          ) : (
+            <>
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+              Ajouter un chocolat
+            </>
+          )}
         </button>
 
+        {/* Formulaire d'ajout style Carte Premium */}
         {showForm && (
-          <div className="bg-white rounded-xl p-4 mb-4 shadow-sm border border-stone-200">
-            <div className="mb-3">
-              <label className="text-sm text-stone-500 mb-1 block">
-                Nom du chocolat
+          <div className="bg-white rounded-2xl p-4 mt-4 shadow-[0_4px_16px_-4px_rgba(62,39,35,0.08)] border border-amber-900/10 animate-fadeIn">
+            <div className="mb-4">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
+                Nom du produit d'artisanat
               </label>
-
               <select
                 value={name}
                 onChange={handleSelectChocolate}
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-600 bg-white"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-700 bg-stone-50 text-stone-800 transition-all appearance-none shadow-inner"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 12px center",
+                  backgroundSize: "16px",
+                }}
               >
-                <option value="">Choisir un chocolat...</option>
+                <option value="">Sélectionner dans le grimoire...</option>
                 {chocolateList.map((choco) => (
                   <option key={choco.name} value={choco.name}>
                     {choco.name}
@@ -159,61 +166,96 @@ export default function Management() {
                 ))}
               </select>
             </div>
-            <div className="mb-4">
-              <label className="text-sm text-stone-500 mb-1 block">
-                Durée de vie (semaines)
+
+            <div className="mb-5">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
+                Durée de fraîcheur optimale
               </label>
-              <input
-                type="number"
-                value={lifeWeeks}
-                onChange={(e) => setLifeWeeks(e.target.value)}
-                readOnly
-                className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm bg-stone-50 text-stone-500"
-              />
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  value={lifeWeeks ? `${lifeWeeks} semaines` : ""}
+                  readOnly
+                  placeholder="Sélection automatique"
+                  className="w-full border border-stone-200/60 rounded-xl px-3 py-2.5 text-sm bg-stone-100/80 font-semibold text-stone-500 shadow-inner"
+                />
+              </div>
             </div>
+
             <button
               onClick={addType}
-              className="w-full bg-amber-700 text-white py-2 rounded-lg text-sm font-medium"
+              disabled={!name}
+              className="w-full bg-amber-700 text-[#FFF8E1] hover:bg-amber-800 disabled:opacity-40 disabled:hover:bg-amber-700 py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-150 shadow-sm active:scale-95"
             >
-              Enregistrer
+              Enregistrer au catalogue
             </button>
           </div>
         )}
 
-        {/* Liste des types */}
-        {loading ? (
-          <p className="text-center text-stone-400 text-sm mt-8">
-            Chargement...
-          </p>
-        ) : chocolate.length === 0 ? (
-          <p className="text-center text-stone-400 text-sm mt-8">
-            Aucun type de chocolat — commence par en ajouter un.
-          </p>
-        ) : (
-          <ul className="flex flex-col gap-3">
-            {chocolate.map((choco) => (
-              <li
-                key={choco.id}
-                className="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-200 flex items-center justify-between"
-              >
-                <div>
-                  <p className="font-medium text-stone-800">{choco.name}</p>
-                  <p className="text-xs text-stone-400 mt-0.5">
-                    Durée de vie : {choco.week_lifetime} semaines · retrait à{" "}
-                    {choco.week_lifetime - 2} sem.
-                  </p>
-                </div>
-                <button
-                  onClick={() => deleteType(choco.id)}
-                  className="text-red-400 hover:text-red-600 text-lg px-2"
-                  title="Supprimer"
+        {/* Liste principale des types enregistrés */}
+        <div className="mt-6">
+          <h2 className="text-[11px] font-bold text-amber-900/40 uppercase tracking-wider mb-3 px-1">
+            Produits enregistrés
+          </h2>
+
+          {loading ? (
+            <div className="flex flex-col items-center justify-center pt-12 gap-2">
+              <div className="w-5 h-5 border-2 border-amber-900/20 border-t-amber-900 rounded-full animate-spin" />
+              <p className="text-center text-amber-900/40 text-xs font-medium">
+                Lecture du catalogue...
+              </p>
+            </div>
+          ) : chocolate.length === 0 ? (
+            <p className="text-center text-amber-900/40 text-sm py-8 bg-white rounded-2xl border border-amber-900/10 shadow-sm font-medium">
+              Le catalogue est vide pour le moment.
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-3">
+              {chocolate.map((choco) => (
+                <li
+                  key={choco.id}
+                  className="bg-white rounded-2xl px-4 py-3.5 shadow-[0_2px_8px_-3px_rgba(62,39,35,0.04)] border border-amber-900/10 flex items-center justify-between hover:border-amber-700/20 transition-all group"
                 >
-                  🗑
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
+                  <div className="min-w-0 pr-2">
+                    <p className="font-bold text-[#3E2723] text-sm tracking-tight truncate">
+                      {choco.name}
+                    </p>
+                    <div className="flex flex-wrap gap-x-2 gap-y-0.5 text-[11px] text-stone-400 mt-0.5 font-medium">
+                      <span className="text-amber-800/70 font-semibold">
+                        {choco.week_lifetime} semaines totales
+                      </span>
+                      <span className="text-stone-300">·</span>
+                      <span>
+                        Alerte retrait à {choco.week_lifetime - 2} sem.
+                      </span>
+                    </div>
+                  </div>
+
+                  <button
+                    onClick={() => deleteType(choco.id)}
+                    className="flex items-center justify-center w-8 h-8 rounded-lg text-stone-400 hover:text-red-600 hover:bg-red-50 transition-all duration-150 active:scale-90"
+                    title="Supprimer la référence"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={2}
+                      stroke="currentColor"
+                      className="w-4 h-4"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                      />
+                    </svg>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </div>
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />

@@ -1,224 +1,522 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
   getCurrentWeekLabel,
   getStatusStyle,
 } from "../../utils/dates";
+import Toast from "../../components/Toast";
+import { useToast } from "../../hooks/useToast";
+import { ChocolateType } from "../../types/chocolateType"; // Ajuste le chemin selon ton arborescence
 
 interface Batch {
   id: string;
   reference: string;
+  type_id: string;
   week_receiving: string;
+  week_opening: string | null;
   quantity: number;
   status: string;
+  created_at: string;
   chocolate_type: {
     name: string;
     week_lifetime: number;
   };
 }
 
-export default function Alertes() {
+const FILTERS = [
+  "Actifs",
+  "En stock",
+  "Ouverts",
+  "Périmés",
+  "À retirer",
+] as const;
+type Filter = (typeof FILTERS)[number];
+
+export default function Suivi() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<Filter>("Actifs");
+  const [showForm, setShowForm] = useState(false);
+  const { toast, showToast, hideToast } = useToast();
+  const navigate = useNavigate();
+
+  // Form state
+  const [chocolate, setChocolate] = useState<ChocolateType[]>([]);
+  const [typeId, setTypeId] = useState("");
+  const [reference, setReference] = useState("");
+  const [weekReceiving, setWeekReceiving] = useState(getCurrentWeekLabel());
+  const [quantity, setQuantity] = useState("");
 
   useEffect(() => {
     fetchBatches();
+    fetchChocolateTypes();
   }, []);
 
   const fetchBatches = async () => {
     const { data, error } = await supabase
       .from("batches")
       .select("*, chocolate_type!type_id(name, week_lifetime)")
-      .in("status", ["stock", "ouvert"])
-      .order("created_at", { ascending: true });
+      .order("created_at", { ascending: false });
     if (!error) setBatches(data || []);
     setLoading(false);
   };
 
-  // Fonction pour supprimer le lot
-  const deleteBatch = async (id: string) => {
-    const confirmDelete = window.confirm("Voulez-vous vraiment supprimer ce lot périmé ?");
-    if (!confirmDelete) return;
+  const fetchChocolateTypes = async () => {
+    const { data, error } = await supabase
+      .from("chocolate_type")
+      .select("*")
+      .order("name");
+    if (!error) setChocolate(data || []);
+  };
 
-    const { error } = await supabase
-      .from("batches")
-      .delete()
-      .eq("id", id);
-
+  const addBatch = async () => {
+    if (!typeId || !reference.trim() || !weekReceiving || !quantity) return;
+    const { error } = await supabase.from("batches").insert({
+      type_id: typeId,
+      reference: reference.trim(),
+      week_receiving: weekReceiving,
+      week_opening: null,
+      quantity: parseInt(quantity),
+      status: "stock",
+    });
     if (!error) {
-      // Met à jour l'état local pour faire disparaître le lot instantanément
-      setBatches((prev) => prev.filter((b) => b.id !== id));
+      showToast("Lot ajouté avec succès !");
+      setTypeId("");
+      setReference("");
+      setWeekReceiving(getCurrentWeekLabel());
+      setQuantity("");
+      setShowForm(false);
+      fetchBatches();
     } else {
-      alert("Une erreur est survenue lors de la suppression.");
+      showToast("Erreur lors de l'ajout.", "error");
     }
   };
 
-  const expired = batches.filter((b) => {
-    const d = computeBatchesDates(
-      b.week_receiving,
-      b.chocolate_type.week_lifetime,
+  const openBatch = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const { error } = await supabase
+      .from("batches")
+      .update({ week_opening: getCurrentWeekLabel(), status: "ouvert" })
+      .eq("id", id);
+    if (!error) {
+      showToast("Boîte marquée comme ouverte !");
+      fetchBatches();
+    }
+  };
+
+  const updateStatus = async (
+    id: string,
+    status: string,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+
+    if (status === "epuise") {
+      const confirmEpuise = window.confirm(
+        "Confirmez-vous que ce lot est épuisé ? (Il sera archivé/supprimé)",
+      );
+      if (!confirmEpuise) return;
+
+      const { error } = await supabase.from("batches").delete().eq("id", id);
+      if (!error) {
+        showToast("Lot épuisé et retiré !");
+        fetchBatches();
+      }
+      return;
+    }
+
+    const { error } = await supabase
+      .from("batches")
+      .update({ status })
+      .eq("id", id);
+    if (!error) {
+      showToast("Boîte marquée comme périmée !");
+      fetchBatches();
+    }
+  };
+
+  const deleteBatch = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const confirmDelete = window.confirm(
+      "Voulez-vous supprimer définitivement ce lot périmé ?",
     );
-    return d?.status === "expired";
+    if (!confirmDelete) return;
+
+    const { error } = await supabase.from("batches").delete().eq("id", id);
+    if (!error) {
+      showToast("Lot supprimé définitivement.");
+      fetchBatches();
+    }
+  };
+
+  const filteredBatches = batches.filter((b) => {
+    if (filter === "Actifs")
+      return b.status === "stock" || b.status === "ouvert";
+    if (filter === "En stock") return b.status === "stock";
+    if (filter === "Ouverts") return b.status === "ouvert";
+    if (filter === "Périmés") return b.status === "perime";
+    if (filter === "À retirer") {
+      if (!b.week_opening) return false;
+      const dates = computeBatchesDates(
+        b.week_receiving,
+        b.chocolate_type.week_lifetime,
+      );
+      return dates?.status === "expired" || dates?.status === "warning";
+    }
+    return true;
   });
 
-  const warning = batches.filter((b) => {
-    const d = computeBatchesDates(
-      b.week_receiving,
-      b.chocolate_type.week_lifetime,
-    );
-    return d?.status === "warning";
-  });
+  const getStatusInfo = (batch: Batch) => {
+    if (batch.status === "stock" || !batch.week_opening)
+      return getStatusStyle("stock");
+    if (batch.status === "perime") return getStatusStyle("perime");
 
-  const ok = batches.filter((b) => {
-    const d = computeBatchesDates(
-      b.week_receiving,
-      b.chocolate_type.week_lifetime,
-    );
-    return d?.status === "ok";
-  });
-
-  const AlertCard = ({ batch }: { batch: Batch }) => {
     const dates = computeBatchesDates(
       batch.week_receiving,
       batch.chocolate_type.week_lifetime,
     );
-    if (!dates) return null;
-    const style = getStatusStyle(dates.status);
+    if (!dates) return getStatusStyle("stock");
 
-    return (
-      <div className="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-200">
-        <div className="flex items-start justify-between gap-2">
-          <div className="min-w-0">
-            <p className="font-semibold text-stone-800 truncate">
-              {batch.chocolate_type.name}
-            </p>
-            <p className="text-xs text-stone-400 mt-0.5">
-              {batch.reference} · {batch.quantity} boîtes
+    return getStatusStyle(dates.status);
+  };
+
+  return (
+    <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
+      {/* Header Premium */}
+      <header className="bg-[#3E2723] text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-black tracking-tight text-[#FFF8E1]">
+              Suivi des Lots
+            </h1>
+            <p className="text-amber-200/60 text-xs mt-0.5 font-medium">
+              Semaine {getCurrentWeekLabel()} — Traçabilité & Fraîcheur
             </p>
           </div>
-          <span
-            className={`flex-shrink-0 text-xs font-medium px-2.5 py-1 rounded-full ${style.bg} ${style.text}`}
+          <button
+            onClick={() => setShowForm(!showForm)}
+            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md border transition-all duration-200 active:scale-95 ${
+              showForm
+                ? "bg-white text-stone-700 border-stone-200"
+                : "bg-amber-700 text-[#FFF8E1] border-amber-600 hover:bg-amber-800"
+            }`}
           >
-            {style.label}
-          </span>
-        </div>
-        <div className="flex items-center gap-3 mt-2 text-xs text-stone-400">
-          <span>📦 Reçu {batch.week_receiving}</span>
-          <span>📅 Retrait {dates.withdrawalDate}</span>
-          <span>
-            {dates.status === "expired"
-              ? `⏳ Périmé depuis ${dates.expiryDate}`
-              : `date de péremption: ${dates.expiryDate}`}
-          </span>
-        </div>
-        
-        {dates.status === "expired" && (
-          <div className="mt-2 flex items-center justify-between gap-2 bg-red-50 rounded-lg p-1.5 pl-3">
-            <span className="text-xs font-medium text-red-600📐">
-              ⚠️ À retirer immédiatement de la vente
-            </span>
-            <button
-              onClick={() => deleteBatch(batch.id)}
-              className="flex items-center justify-center p-1.5 rounded-md bg-red-600 text-white hover:bg-red-700 active:scale-95 transition-all shadow-sm"
-              title="Supprimer le lot"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+            {showForm ? (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18 18 6M6 6l12 12"
+                />
               </svg>
+            ) : (
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="w-5 h-5"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
+              </svg>
+            )}
+          </button>
+        </div>
+      </header>
+
+      <div className="px-4">
+        {/* Formulaire ajout lot style Carte Premium */}
+        {showForm && (
+          <div className="mt-4 bg-white rounded-2xl p-4 shadow-[0_4px_16px_-4px_rgba(62,39,35,0.08)] border border-amber-900/10 animate-fadeIn">
+            <h2 className="text-stone-700 font-bold mb-4 text-xs uppercase tracking-wider text-amber-900/60">
+              Enregistrer un nouveau lot
+            </h2>
+
+            <div className="mb-3">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
+                Type de chocolat
+              </label>
+              <select
+                value={typeId}
+                onChange={(e) => setTypeId(e.target.value)}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-700 bg-stone-50 text-stone-800 transition-all appearance-none shadow-inner"
+                style={{
+                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
+                  backgroundRepeat: "no-repeat",
+                  backgroundPosition: "right 12px center",
+                  backgroundSize: "16px",
+                }}
+              >
+                <option value="">Sélectionner une référence...</option>
+                {chocolate.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="mb-3">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
+                Référence boîte
+              </label>
+              <input
+                type="text"
+                value={reference}
+                onChange={(e) => setReference(e.target.value)}
+                placeholder="ex. BOX-2026-042"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-700 bg-stone-50 placeholder-stone-400 shadow-inner"
+              />
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-4">
+              <div>
+                <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
+                  Semaine réception
+                </label>
+                <input
+                  type="text"
+                  value={weekReceiving}
+                  onChange={(e) => setWeekReceiving(e.target.value)}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-amber-700 bg-stone-50 shadow-inner"
+                />
+              </div>
+              <div>
+                <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
+                  Quantité (boîtes)
+                </label>
+                <input
+                  type="number"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                  placeholder="ex. 5"
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-700 bg-stone-50 placeholder-stone-400 shadow-inner"
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={addBatch}
+              disabled={!typeId || !reference.trim() || !quantity}
+              className="w-full bg-amber-700 text-[#FFF8E1] hover:bg-amber-800 disabled:opacity-40 disabled:hover:bg-amber-700 py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-150 shadow-sm active:scale-95"
+            >
+              Ajouter au stock
             </button>
           </div>
         )}
 
-        {dates.status === "warning" && (
-          <div className="mt-2 text-xs font-medium text-amber-600 bg-amber-50 rounded-lg px-3 py-1.5">
-            🕐 Retrait dans {dates.weeksUntilWithdrawal} semaine
-            {dates.weeksUntilWithdrawal > 1 ? "s" : ""}
-          </div>
-        )}
-      </div>
-    );
-  };
-
-  const Section = ({
-    title,
-    items,
-    empty,
-  }: {
-    title: string;
-    items: Batch[];
-    empty: string;
-  }) => (
-    <div className="mb-6">
-      <h2 className="text-xs font-semibold text-stone-400 uppercase tracking-wider mb-3 px-1">
-        {title} ({items.length})
-      </h2>
-      {items.length === 0 ? (
-        <p className="text-center text-stone-400 text-sm py-4 bg-white rounded-xl border border-stone-200">
-          {empty}
-        </p>
-      ) : (
-        <div className="flex flex-col gap-3">
-          {items.map((b) => (
-            <AlertCard key={b.id} batch={b} />
+        {/* Pilules de Filtres Horizontaux */}
+        <div className="mt-5 flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 px-4">
+          {FILTERS.map((f) => (
+            <button
+              key={f}
+              onClick={() => setFilter(f)}
+              className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 tracking-wide border
+                ${
+                  filter === f
+                    ? "bg-amber-800 text-[#FFF8E1] border-amber-900/20 shadow-sm"
+                    : "bg-white text-stone-500 border-stone-200/80 hover:text-stone-700 hover:bg-stone-50"
+                }`}
+            >
+              {f}
+            </button>
           ))}
         </div>
+
+        {/* Liste principale des lots */}
+        <div className="mt-4 flex flex-col gap-3">
+          {loading ? (
+            <div className="flex flex-col items-center justify-center pt-12 gap-2">
+              <div className="w-5 h-5 border-2 border-amber-900/20 border-t-amber-900 rounded-full animate-spin" />
+              <p className="text-center text-amber-900/40 text-xs font-medium">
+                Inventaire en cours...
+              </p>
+            </div>
+          ) : filteredBatches.length === 0 ? (
+            <p className="text-center text-amber-900/40 text-sm py-8 bg-white rounded-2xl border border-amber-900/10 shadow-sm font-medium">
+              Aucun lot trouvé dans cette catégorie.
+            </p>
+          ) : (
+            filteredBatches.map((batch) => {
+              const statusInfo = getStatusInfo(batch);
+              const dates = batch.week_receiving
+                ? computeBatchesDates(
+                    batch.week_receiving,
+                    batch.chocolate_type.week_lifetime,
+                  )
+                : null;
+
+              return (
+                <div
+                  key={batch.id}
+                  className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_-3px_rgba(62,39,35,0.04)] border border-amber-900/10 hover:border-amber-700/20 transition-all"
+                >
+                  {/* Titre et badge de statut */}
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="font-bold text-[#3E2723] text-[15px] tracking-tight leading-tight">
+                        {batch.chocolate_type.name}
+                      </p>
+                      <p className="text-xs text-stone-400 mt-1 font-medium">
+                        Réf :{" "}
+                        <span className="font-semibold text-stone-600">
+                          {batch.reference}
+                        </span>{" "}
+                        ·{" "}
+                        <span className="text-amber-800 font-semibold">
+                          {batch.quantity} boîte{batch.quantity > 1 ? "s" : ""}
+                        </span>
+                      </p>
+                    </div>
+                    <span
+                      className={`flex-shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${statusInfo.bg} ${statusInfo.text} border-current/10`}
+                    >
+                      {statusInfo.label}
+                    </span>
+                  </div>
+
+                  {/* Ligne des dates de traçabilité */}
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
+                    <span className="flex items-center gap-1">
+                      <span className="text-stone-300">📦</span> Recu{" "}
+                      <strong className="text-stone-700">
+                        {batch.week_receiving}
+                      </strong>
+                    </span>
+                    {batch.week_opening && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-stone-300">🔓</span> Ouvert{" "}
+                        <strong className="text-stone-700">
+                          {batch.week_opening}
+                        </strong>
+                      </span>
+                    )}
+                    {dates && (
+                      <span className="flex items-center gap-1 ml-auto text-amber-900/80">
+                        <span className="text-amber-700/40">📅</span> Retrait :{" "}
+                        <strong className="font-bold text-amber-900">
+                          {dates.withdrawalDate}
+                        </strong>
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Actions contextuelles premium */}
+                  <div className="mt-4 flex gap-2">
+                    {batch.status !== "perime" && batch.status !== "epuise" && (
+                      <>
+                        {batch.status === "stock" && (
+                          <button
+                            onClick={(e) => openBatch(batch.id, e)}
+                            className="flex-1 bg-amber-50 text-amber-800 border border-amber-200/60 hover:bg-amber-100/70 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                          >
+                            <svg
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                              strokeWidth={2}
+                              stroke="currentColor"
+                              className="w-3.5 h-3.5"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                d="M13.5 10.5V6.75a4.5 4.5 0 1 1 9 0v3.75M3.75 21.75h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H3.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z"
+                              />
+                            </svg>
+                            Ouvrir
+                          </button>
+                        )}
+                        <button
+                          onClick={(e) => updateStatus(batch.id, "perime", e)}
+                          className="flex-1 bg-red-50/60 text-red-600 border border-red-100 hover:bg-red-50 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-3.5 h-3.5"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z"
+                            />
+                          </svg>
+                          Périmé
+                        </button>
+                        <button
+                          onClick={(e) => updateStatus(batch.id, "epuise", e)}
+                          className="flex-1 bg-stone-50 text-stone-600 border border-stone-200/80 hover:bg-stone-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-3.5 h-3.5"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="m20.25 7.5-.625 10.632a2.25 2.25 0 0 1-2.247 2.118H6.622a2.25 2.25 0 0 1-2.247-2.118L3.75 7.5M10 11.25h4M3.375 7.5h17.25c.621 0 1.125-.504 1.125-1.125v-1.5c0-.621-.504-1.125-1.125-1.125H3.375c-.621 0-1.125.504-1.125 1.125v1.5c0 .621.504 1.125 1.125 1.125Z"
+                            />
+                          </svg>
+                          Épuisé
+                        </button>
+                      </>
+                    )}
+
+                    {batch.status === "perime" && (
+                      <button
+                        onClick={(e) => deleteBatch(batch.id, e)}
+                        className="w-full bg-red-600 text-white hover:bg-red-700 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          strokeWidth={2}
+                          stroke="currentColor"
+                          className="w-3.5 h-3.5"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"
+                          />
+                        </svg>
+                        Supprimer définitivement du registre
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
-    </div>
-  );
-
-  return (
-    <div className="min-h-screen bg-stone-50 pb-24">
-      {/* Header */}
-      <div className="bg-amber-800 text-white px-4 pt-10 pb-6">
-        <h1 className="text-xl font-bold">Alertes</h1>
-        <p className="text-amber-200 text-sm mt-1">
-          {getCurrentWeekLabel()} — {expired.length + warning.length} lot
-          {expired.length + warning.length > 1 ? "s" : ""} à surveiller
-        </p>
-      </div>
-
-      {/* Compteurs */}
-      <div className="px-4 mt-4 grid grid-cols-3 gap-3">
-        <div className="bg-red-50 border border-red-200 rounded-xl p-3 text-center">
-          <p className="text-2xl font-bold text-red-600">{expired.length}</p>
-          <p className="text-xs text-red-400 mt-0.5">À retirer</p>
-        </div>
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-3 text-center">
-          <p className="text-2xl font-bold text-amber-600">{warning.length}</p>
-          <p className="text-xs text-amber-400 mt-0.5">À surveiller</p>
-        </div>
-        <div className="bg-green-50 border border-green-200 rounded-xl p-3 text-center">
-          <p className="text-2xl font-bold text-green-600">{ok.length}</p>
-          <p className="text-xs text-green-400 mt-0.5">OK</p>
-        </div>
-      </div>
-
-      <div className="px-4 mt-6">
-        {loading ? (
-          <p className="text-center text-stone-400 text-sm mt-8">
-            Chargement...
-          </p>
-        ) : (
-          <>
-            <Section
-              title="🔴 À retirer immédiatement"
-              items={expired}
-              empty="Aucun lot à retirer"
-            />
-            <Section
-              title="🟠 À surveiller"
-              items={warning}
-              empty="Aucun lot en alerte"
-            />
-            <Section
-              title="🟢 En bonne forme"
-              items={ok}
-              empty="Aucun lot OK"
-            />
-          </>
-        )}
-      </div>
     </div>
   );
 }
