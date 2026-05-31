@@ -9,6 +9,7 @@ import {
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { ChocolateType } from "../../types/chocolateType";
+import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
 interface Batch {
   id: string;
   reference: string;
@@ -47,6 +48,8 @@ export default function Suivi() {
   const [reference, setReference] = useState("");
   const [weekReceiving, setWeekReceiving] = useState(getCurrentWeekLabel());
   const [quantity, setQuantity] = useState("");
+
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   useEffect(() => {
     fetchBatches();
@@ -180,7 +183,28 @@ export default function Suivi() {
 
     return getStatusStyle(dates.status);
   };
+  const handleBarcodeScan = async (barcode: string) => {
+    setShowBarcodeScanner(false);
 
+    const { data, error } = await supabase
+      .from("chocolate_type")
+      .select("id, name, week_lifetime")
+      .eq("barcode", barcode)
+      .single();
+
+    if (error || !data) {
+      showToast(
+        "Code-barres non reconnu — sélectionne le type de chocolat manuellement.",
+        "error",
+      );
+      setShowForm(true);
+      return;
+    }
+
+    showToast(`${data.name} reconnu !`);
+    setTypeId(data.id);
+    setShowForm(true);
+  };
   return (
     <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
       <header className="bg-[#3E2723] text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
@@ -193,46 +217,72 @@ export default function Suivi() {
               Semaine {getCurrentWeekLabel()} — Traçabilité & Fraîcheur
             </p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md border transition-all duration-200 active:scale-95 ${
-              showForm
-                ? "bg-white text-stone-700 border-stone-200"
-                : "bg-amber-700 text-[#FFF8E1] border-amber-600 hover:bg-amber-800"
-            }`}
-          >
-            {showForm ? (
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowBarcodeScanner(true)}
+              className="w-10 h-10 bg-amber-700 rounded-full flex items-center justify-center shadow-md border border-amber-600 hover:bg-amber-800 active:scale-95 transition-all duration-200"
+            >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 fill="none"
                 viewBox="0 0 24 24"
-                strokeWidth={2.5}
+                strokeWidth={2}
                 stroke="currentColor"
-                className="w-5 h-5"
+                className="w-5 h-5 text-[#FFF8E1]"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M6 18 18 6M6 6l12 12"
+                  d="M3.75 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 3.75 9.375v-4.5ZM3.75 14.625c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5a1.125 1.125 0 0 1-1.125-1.125v-4.5ZM13.5 4.875c0-.621.504-1.125 1.125-1.125h4.5c.621 0 1.125.504 1.125 1.125v4.5c0 .621-.504 1.125-1.125 1.125h-4.5A1.125 1.125 0 0 1 13.5 9.375v-4.5Z"
                 />
-              </svg>
-            ) : (
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-5 h-5"
-              >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  d="M12 4.5v15m7.5-7.5h-15"
+                  d="M6.75 6.75h.75v.75h-.75v-.75ZM6.75 16.5h.75v.75h-.75v-.75ZM16.5 6.75h.75v.75h-.75v-.75ZM13.5 13.5h.75v.75h-.75v-.75ZM13.5 18.75h.75v.75h-.75v-.75ZM18.75 13.5h.75v.75h-.75v-.75ZM18.75 18.75h.75v.75h-.75v-.75ZM16.5 16.5h.75v.75h-.75v-.75Z"
                 />
               </svg>
-            )}
-          </button>
+            </button>
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md border transition-all duration-200 active:scale-95 ${
+                showForm
+                  ? "bg-white text-stone-700 border-stone-200"
+                  : "bg-amber-700 text-[#FFF8E1] border-amber-600 hover:bg-amber-800"
+              }`}
+            >
+              {showForm ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2.5}
+                  stroke="currentColor"
+                  className="w-5 h-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M12 4.5v15m7.5-7.5h-15"
+                  />
+                </svg>
+              )}
+            </button>
+          </div>
         </div>
       </header>
 
@@ -511,7 +561,12 @@ export default function Suivi() {
           )}
         </div>
       </div>
-
+      {showBarcodeScanner && (
+        <BarcodeScanner
+          onScan={handleBarcodeScan}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
