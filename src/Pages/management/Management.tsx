@@ -11,7 +11,6 @@ export default function Management() {
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
   const [lifeWeeks, setLifeWeeks] = useState("");
-
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
