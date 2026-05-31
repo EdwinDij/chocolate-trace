@@ -4,7 +4,7 @@ export default function Navbar() {
   const tabs = [
     { path: "/", label: "Suivi", icon: "📦" },
     { path: "/alertes", label: "Alertes", icon: "⚠️" },
-    { path: "/gerer", label: "Gérer", icon: "⚙️" },
+    { path: "/gestion", label: "Gérer", icon: "⚙️" },
   ];
   return (
     <>
