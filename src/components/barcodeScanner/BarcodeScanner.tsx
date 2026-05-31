@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { BrowserMultiFormatReader } from "@zxing/browser";
 
 interface BarcodeScannerProps {
@@ -10,6 +10,7 @@ export default function BarcodeScanner({
   onScan,
   onClose,
 }: BarcodeScannerProps) {
+  const [debugMsg, setDebugMsg] = useState("⌛ Initialisation...");
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
 
@@ -17,16 +18,23 @@ export default function BarcodeScanner({
     const reader = new BrowserMultiFormatReader();
 
     reader
-      .decodeFromVideoDevice(undefined, videoRef.current!, (result) => {
+      .decodeFromVideoDevice(undefined, videoRef.current!, (result, error) => {
         if (result) {
+          setDebugMsg("✅ Lu : " + result.getText());
           onScan(result.getText());
           controlsRef.current?.stop();
         }
+        if (error?.message && !error.message.includes("No MultiFormat")) {
+          setDebugMsg("❌ " + error.message);
+        }
       })
       .then((controls) => {
+        setDebugMsg("📷 Caméra active");
         controlsRef.current = controls;
+      })
+      .catch((err) => {
+        setDebugMsg("💥 " + err.message);
       });
-
     return () => {
       controlsRef.current?.stop();
     };
@@ -49,6 +57,7 @@ export default function BarcodeScanner({
         <p className="text-white/70 text-xs text-center mt-3">
           Pointez vers le code-barres de la boîte
         </p>
+        <p className="text-white/50 text-xs text-center mt-1">{debugMsg}</p>
         <button
           onClick={onClose}
           className="mt-4 w-full bg-white/10 text-white border border-white/20 py-3 rounded-xl text-sm font-medium"
