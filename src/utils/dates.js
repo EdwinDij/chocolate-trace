@@ -100,6 +100,12 @@ export function getStatusStyle(status) {
       return { bg: "bg-stone-100", text: "text-stone-500", label: "En stock" };
     case "perime":
       return { bg: "bg-red-100", text: "text-red-400", label: "Périmé" };
+    case "non_conforme":
+      return {
+        bg: "bg-purple-100",
+        text: "text-purple-700",
+        label: "Non conforme",
+      };
     default:
       return { bg: "bg-stone-100", text: "text-stone-500", label: "—" };
   }

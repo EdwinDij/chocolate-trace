@@ -10,6 +10,8 @@ import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { ChocolateType } from "../../types/chocolateType";
 import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
+import { archiveBatch } from "../../utils/historic";
+
 interface Batch {
   id: string;
   reference: string;
@@ -114,19 +116,36 @@ export default function Suivi() {
     e: React.MouseEvent,
   ) => {
     e.stopPropagation();
+    const batch = batches.find((b) => b.id === id)!;
 
     if (status === "epuise") {
       const confirmEpuise = window.confirm(
-        "Confirmez-vous que ce lot est épuisé ? (Il sera archivé/supprimé)",
+        "Confirmez-vous que ce lot est épuisé ?",
       );
       if (!confirmEpuise) return;
-
-      const { error } = await supabase.from("batches").delete().eq("id", id);
-      if (!error) {
-        showToast("Lot épuisé et retiré !");
-        fetchBatches();
-      }
+      await archiveBatch(batch, "epuise");
+      await supabase.from("batches").delete().eq("id", id);
+      showToast("Lot épuisé et archivé !");
+      fetchBatches();
       return;
+    }
+
+    if (status === "non_conforme") {
+      const reason = window.prompt(
+        "Raison de non-conformité (ex: moisissure, choc thermique...)",
+      );
+      if (reason === null) return; // annulé
+      const error = await archiveBatch(
+        batch,
+        "non_conforme",
+        reason || undefined,
+      );
+      console.log("archiveBatch error:", error);
+      console.log("batch envoyé:", batch);
+    }
+
+    if (status === "perime") {
+      await archiveBatch(batch, "perime");
     }
 
     const { error } = await supabase
@@ -134,24 +153,26 @@ export default function Suivi() {
       .update({ status })
       .eq("id", id);
     if (!error) {
-      showToast("Boîte marquée comme périmée !");
+      showToast(
+        status === "perime"
+          ? "Lot marqué périmé."
+          : status === "non_conforme"
+            ? "Lot marqué non conforme."
+            : "",
+      );
       fetchBatches();
     }
   };
 
   const deleteBatch = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const confirmDelete = window.confirm(
-      "Voulez-vous supprimer définitivement ce lot périmé ?",
-    );
-    if (!confirmDelete) return;
-
-    const { error } = await supabase.from("batches").delete().eq("id", id);
-    if (!error) {
-      showToast("Lot supprimé définitivement.");
-      fetchBatches();
-    }
+    const confirm = window.confirm("Supprimer définitivement ce lot ?");
+    if (!confirm) return;
+    await supabase.from("batches").delete().eq("id", id);
+    showToast("Lot supprimé.");
+    fetchBatches();
   };
+
   const filteredBatches = batches.filter((b) => {
     const matchSearch =
       search.trim() === "" ||
@@ -180,6 +201,7 @@ export default function Suivi() {
     if (batch.status === "stock" || !batch.week_opening)
       return getStatusStyle("stock");
     if (batch.status === "perime") return getStatusStyle("perime");
+    if (batch.status === "non_conforme") return getStatusStyle("non_conforme");
 
     const dates = computeBatchesDates(
       batch.week_receiving,
@@ -513,7 +535,6 @@ export default function Suivi() {
                     )}
                   </div>
 
-                  {/* Actions contextuelles premium */}
                   <div className="mt-4 flex gap-2">
                     {batch.status !== "perime" && batch.status !== "epuise" && (
                       <>
@@ -558,6 +579,28 @@ export default function Suivi() {
                             />
                           </svg>
                           Périmé
+                        </button>
+                        <button
+                          onClick={(e) =>
+                            updateStatus(batch.id, "non_conforme", e)
+                          }
+                          className="flex-1 bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                        >
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                            strokeWidth={2}
+                            stroke="currentColor"
+                            className="w-3.5 h-3.5"
+                          >
+                            <path
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"
+                            />
+                          </svg>
+                          Non conforme
                         </button>
                         <button
                           onClick={(e) => updateStatus(batch.id, "epuise", e)}
