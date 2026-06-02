@@ -20,8 +20,8 @@ export async function archiveBatch(
     reason: reason || null,
     week_receiving: batch.week_receiving,
   });
-  console.log("Archiving batch", batch.reference, "with status", status, "and reason", reason);
-  console.log("historic insert error:", error);
+  // console.log("Archiving batch", batch.reference, "with status", status, "and reason", reason);
+  // console.log("historic insert error:", error);
 
   return error;
 }

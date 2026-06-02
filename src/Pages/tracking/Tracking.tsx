@@ -140,8 +140,8 @@ export default function Suivi() {
         "non_conforme",
         reason || undefined,
       );
-      console.log("archiveBatch error:", error);
-      console.log("batch envoyé:", batch);
+      // console.log("archiveBatch error:", error);
+      // console.log("batch envoyé:", batch);
     }
 
     if (status === "perime") {
