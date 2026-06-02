@@ -48,7 +48,7 @@ export default function Suivi() {
   const [reference, setReference] = useState("");
   const [weekReceiving, setWeekReceiving] = useState(getCurrentWeekLabel());
   const [quantity, setQuantity] = useState("");
-
+  const [search, setSearch] = useState("");
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   useEffect(() => {
@@ -152,15 +152,21 @@ export default function Suivi() {
       fetchBatches();
     }
   };
-
   const filteredBatches = batches.filter((b) => {
+    const matchSearch =
+      search.trim() === "" ||
+      b.reference.toLowerCase().includes(search.toLowerCase()) ||
+      b.chocolate_type.name.toLowerCase().includes(search.toLowerCase());
+
+    if (!matchSearch) return false;
+
     if (filter === "Actifs")
       return b.status === "stock" || b.status === "ouvert";
     if (filter === "En stock") return b.status === "stock";
     if (filter === "Ouverts") return b.status === "ouvert";
     if (filter === "Périmés") return b.status === "perime";
     if (filter === "À retirer") {
-      if (!b.week_opening) return false;
+      if (!b.week_receiving) return false;
       const dates = computeBatchesDates(
         b.week_receiving,
         b.chocolate_type.week_lifetime,
@@ -285,7 +291,51 @@ export default function Suivi() {
           </div>
         </div>
       </header>
-
+      {/* Searchbar */}
+      <div className="mt-4 relative">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"
+          />
+        </svg>
+        <input
+          type="text"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Rechercher par nom ou référence..."
+          className="w-full pl-9 pr-4 py-2.5 bg-white border border-amber-900/10 rounded-xl text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-700 shadow-sm"
+        />
+        {search && (
+          <button
+            onClick={() => setSearch("")}
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2}
+              stroke="currentColor"
+              className="w-4 h-4"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 18 18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        )}
+      </div>
       <div className="px-4">
         {/* Formulaire ajout lot style Carte Premium */}
         {showForm && (
