@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
@@ -20,6 +19,7 @@ interface Batch {
   week_opening: string | null;
   quantity: number;
   status: string;
+  last_status: string | null;
   created_at: string;
   chocolate_type: {
     name: string;
@@ -42,7 +42,6 @@ export default function Suivi() {
   const [filter, setFilter] = useState<Filter>("Actifs");
   const [showForm, setShowForm] = useState(false);
   const { toast, showToast, hideToast } = useToast();
-  const navigate = useNavigate();
 
   // Form state
   const [chocolate, setChocolate] = useState<ChocolateType[]>([]);
@@ -83,6 +82,7 @@ export default function Suivi() {
       week_receiving: weekReceiving,
       week_opening: null,
       quantity: parseInt(quantity),
+      last_status: null,
       status: "stock",
     });
     if (!error) {
@@ -102,7 +102,11 @@ export default function Suivi() {
     e.stopPropagation();
     const { error } = await supabase
       .from("batches")
-      .update({ week_opening: getCurrentWeekLabel(), status: "ouvert" })
+      .update({
+        week_opening: getCurrentWeekLabel(),
+        status: "ouvert",
+        last_status: batches.find((b) => b.id === id)?.status ?? null,
+      })
       .eq("id", id);
     if (!error) {
       showToast("Boîte marquée comme ouverte !");
@@ -117,6 +121,7 @@ export default function Suivi() {
   ) => {
     e.stopPropagation();
     const batch = batches.find((b) => b.id === id)!;
+    const previousStatus = batch.status;
 
     if (status === "epuise") {
       const confirmEpuise = window.confirm(
@@ -150,7 +155,7 @@ export default function Suivi() {
 
     const { error } = await supabase
       .from("batches")
-      .update({ status })
+      .update({ status, last_status: batch.status })
       .eq("id", id);
     if (!error) {
       showToast(
@@ -233,6 +238,29 @@ export default function Suivi() {
     setTypeId(data.id);
     setShowForm(true);
   };
+
+  const undoLastAction = async (batch: Batch) => {
+    if (!batch.last_status) return;
+
+    await supabase
+      .from("batches")
+      .update({ status: batch.last_status, last_status: null })
+      .eq("id", batch.id);
+
+    // Supprime la dernière entrée historic liée
+    const { data } = await supabase
+      .from("historic")
+      .select("id")
+      .eq("batch_id", batch.id)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (data?.[0]) {
+      await supabase.from("historic").delete().eq("id", data[0].id);
+    }
+
+    showToast("Action annulée !");
+    fetchBatches();
+  };
   return (
     <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
       <header className="bg-[#3E2723] text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
@@ -314,7 +342,7 @@ export default function Suivi() {
         </div>
       </header>
       {/* Searchbar */}
-      <div className="mt-4 relative">
+      <div className="mt-4 relative px-4">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -628,7 +656,7 @@ export default function Suivi() {
                     {batch.status === "perime" && (
                       <button
                         onClick={(e) => deleteBatch(batch.id, e)}
-                        className="w-full bg-red-600 text-white hover:bg-red-700 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                        className="flex-1 bg-red-600 text-white hover:bg-red-700 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
                       >
                         <svg
                           xmlns="http://www.w3.org/2000/svg"
@@ -645,6 +673,17 @@ export default function Suivi() {
                           />
                         </svg>
                         Supprimer définitivement du registre
+                      </button>
+                    )}
+                    {batch.last_status && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          undoLastAction(batch);
+                        }}
+                        className="flex-1 bg-stone-100 text-stone-600 border border-stone-200 hover:bg-stone-200 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                      >
+                        Annuler - remettre en "{batch.last_status}"
                       </button>
                     )}
                   </div>
