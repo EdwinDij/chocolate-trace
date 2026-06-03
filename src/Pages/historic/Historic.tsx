@@ -31,6 +31,11 @@ export default function Historic() {
     "tous" | "perime" | "non_conforme" | "epuise"
   >("tous");
 
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+
+  const toggleGroup = (date: string) => {
+    setOpenGroups((prev) => ({ ...prev, [date]: !prev[date] }));
+  };
   const fetchHistoric = async () => {
     const { data, error } = await supabase
       .from("historic")
@@ -53,6 +58,36 @@ export default function Historic() {
     non_conforme: entries.filter((e) => e.status === "non_conforme").length,
     epuise: entries.filter((e) => e.status === "epuise").length,
   };
+
+  const groupByDate = (entries: HistoricEntry[]) => {
+    return entries.reduce(
+      (groups, entry) => {
+        const date = new Date(entry.created_at).toLocaleDateString("fr-FR", {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        });
+        if (!groups[date]) groups[date] = [];
+        groups[date].push(entry);
+        return groups;
+      },
+      {} as Record<string, HistoricEntry[]>,
+    );
+  };
+  const grouped = groupByDate(filtered);
+
+  useEffect(() => {
+    if (entries.length === 0) return;
+    const firstDate = new Date(entries[0].created_at).toLocaleDateString(
+      "fr-FR",
+      {
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      },
+    );
+    setOpenGroups({ [firstDate]: true });
+  }, [entries]);
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
@@ -114,66 +149,83 @@ export default function Historic() {
       </div>
 
       {/* Liste */}
-      <div className="px-4 mt-4 flex flex-col gap-3">
-        {loading ? (
-          <div className="flex justify-center pt-12">
-            <div className="w-5 h-5 border-2 border-amber-900/20 border-t-amber-900 rounded-full animate-spin" />
-          </div>
-        ) : filtered.length === 0 ? (
-          <p className="text-center text-amber-900/40 text-sm py-8 bg-white rounded-2xl border border-amber-900/10 font-medium">
-            Aucune entrée dans l'historique.
-          </p>
-        ) : (
-          filtered.map((entry) => {
-            const style = STATUS_STYLE[entry.status] || STATUS_STYLE.epuise;
-            const date = new Date(entry.created_at).toLocaleDateString(
-              "fr-FR",
-              {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              },
-            );
-            return (
-              <div
-                key={entry.id}
-                className="bg-white rounded-2xl p-4 border border-amber-900/10 shadow-sm"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-bold text-[#3E2723] text-sm truncate">
-                      {entry.type_name}
-                    </p>
-                    <p className="text-xs text-stone-400 mt-0.5">
-                      Réf :{" "}
-                      <span className="font-semibold text-stone-600">
-                        {entry.reference}
-                      </span>
-                      {" · "}Reçu{" "}
-                      <span className="font-semibold">
-                        {entry.week_receiving}
-                      </span>
-                    </p>
-                  </div>
-                  <span
-                    className={`flex-shrink-0 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${style.bg} ${style.text}`}
+      {Object.entries(grouped).map(([date, entries]) => (
+        <div key={date} className="mb-2">
+          {/* Header dropdown */}
+          <button
+            onClick={() => toggleGroup(date)}
+            className="w-full flex items-center justify-between px-4 py-3 bg-white rounded-2xl border border-amber-900/10 shadow-sm"
+          >
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-amber-900/60 uppercase tracking-wider">
+                {date}
+              </span>
+              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+                {entries.length} lot{entries.length > 1 ? "s" : ""}
+              </span>
+            </div>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={2.5}
+              stroke="currentColor"
+              className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${
+                openGroups[date] ? "rotate-180" : ""
+              }`}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="m19.5 8.25-7.5 7.5-7.5-7.5"
+              />
+            </svg>
+          </button>
+
+          {/* Contenu dépliable */}
+          {openGroups[date] && (
+            <div className="mt-2 flex flex-col gap-2 pl-2">
+              {entries.map((entry) => {
+                const style = STATUS_STYLE[entry.status] || STATUS_STYLE.epuise;
+                return (
+                  <div
+                    key={entry.id}
+                    className="bg-white rounded-2xl p-4 border border-amber-900/10 shadow-sm"
                   >
-                    {style.label}
-                  </span>
-                </div>
-                {entry.reason && (
-                  <p className="mt-2 text-xs text-purple-700 bg-purple-50 rounded-lg px-3 py-1.5 font-medium">
-                    Raison : {entry.reason}
-                  </p>
-                )}
-                <p className="mt-2 text-[11px] text-stone-400 font-medium">
-                  Archivé le {date}
-                </p>
-              </div>
-            );
-          })
-        )}
-      </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-bold text-[#3E2723] text-sm truncate">
+                          {entry.type_name}
+                        </p>
+                        <p className="text-xs text-stone-400 mt-0.5">
+                          Réf :{" "}
+                          <span className="font-semibold text-stone-600">
+                            {entry.reference}
+                          </span>
+                          {" · "}Reçu{" "}
+                          <span className="font-semibold">
+                            {entry.week_receiving}
+                          </span>
+                        </p>
+                      </div>
+                      <span
+                        className={`flex-shrink-0 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${style.bg} ${style.text}`}
+                      >
+                        {style.label}
+                      </span>
+                    </div>
+                    {entry.reason && (
+                      <p className="mt-2 text-xs text-purple-700 bg-purple-50 rounded-lg px-3 py-1.5 font-medium">
+                        Raison : {entry.reason}
+                      </p>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   );
 }
