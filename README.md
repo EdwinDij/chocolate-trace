@@ -178,4 +178,4 @@ Pas d'authentification — accès par URL partagée entre les membres de l'équi
 
 ---
 
-*Crée par Edwin Dijeont pour "À la Mère de Famille — Levis" · Usage interne*
+© 2026 Edwin Dijeont. Tous droits réservés.
