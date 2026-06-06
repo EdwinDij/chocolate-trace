@@ -699,6 +699,7 @@ export default function Suivi() {
           onClose={() => setShowBarcodeScanner(false)}
         />
       )}
+      
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}

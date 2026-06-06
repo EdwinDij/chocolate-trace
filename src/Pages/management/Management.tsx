@@ -367,6 +367,11 @@ export default function Management() {
           onClose={() => setShowBarcodeScanner(false)}
         />
       )}
+      <div className="px-4 mt-8 pb-2">
+        <p className="text-center text-[10px] text-amber-900/30 font-medium">
+          © 2026 Edwin Dijeont
+        </p>
+      </div>
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
