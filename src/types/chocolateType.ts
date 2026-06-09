@@ -4,4 +4,5 @@ export interface ChocolateType {
     week_lifetime: number;
     barcode: string | null;
     created_at: string;
+    
 }

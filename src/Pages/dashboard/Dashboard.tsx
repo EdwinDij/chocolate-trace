@@ -98,7 +98,7 @@ export default function Alertes() {
             </p>
           </div>
 
-          {/* Indicateur visuel discret */}
+
           <span
             className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${isCritical ? "bg-red-500 animate-pulse" : "bg-amber-500"}`}
           />
