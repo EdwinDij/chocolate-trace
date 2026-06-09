@@ -1,15 +1,9 @@
 import { supabase } from "./supabase";
-
-interface Batch {
-  id: string;
-  reference: string;
-  week_receiving: string;
-  chocolate_type: { name: string };
-}
+import { Batch, BatchStatus } from "../types/batch";
 
 export async function archiveBatch(
   batch: Batch,
-  status: "perime" | "non_conforme" | "epuise",
+  status: BatchStatus.PERIME | BatchStatus.NON_CONFORME | BatchStatus.EPUISE,
   reason?: string
 ) {
   const { error } = await supabase.from("historic").insert({

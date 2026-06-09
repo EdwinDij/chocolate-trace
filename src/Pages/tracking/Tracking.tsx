@@ -10,22 +10,7 @@ import { useToast } from "../../hooks/useToast";
 import { ChocolateType } from "../../types/chocolateType";
 import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
 import { archiveBatch } from "../../utils/historic";
-
-interface Batch {
-  id: string;
-  reference: string;
-  type_id: string;
-  week_receiving: string;
-  week_opening: string | null;
-  quantity: number;
-  status: string;
-  last_status: string | null;
-  created_at: string;
-  chocolate_type: {
-    name: string;
-    week_lifetime: number;
-  };
-}
+import { Batch, BatchStatus } from "../../types/batch";
 
 const FILTERS = [
   "Actifs",
@@ -83,7 +68,7 @@ export default function Suivi() {
       week_opening: null,
       quantity: parseInt(quantity),
       last_status: null,
-      status: "stock",
+      status: BatchStatus.STOCK,
     });
     if (!error) {
       showToast("Lot ajouté avec succès !");
@@ -104,7 +89,7 @@ export default function Suivi() {
       .from("batches")
       .update({
         week_opening: getCurrentWeekLabel(),
-        status: "ouvert",
+        status: BatchStatus.OUVERT,
         last_status: batches.find((b) => b.id === id)?.status ?? null,
       })
       .eq("id", id);
@@ -123,34 +108,34 @@ export default function Suivi() {
     const batch = batches.find((b) => b.id === id)!;
     const previousStatus = batch.status;
 
-    if (status === "epuise") {
+    if (status === BatchStatus.EPUISE) {
       const confirmEpuise = window.confirm(
         "Confirmez-vous que ce lot est épuisé ?",
       );
       if (!confirmEpuise) return;
-      await archiveBatch(batch, "epuise");
+      await archiveBatch(batch, BatchStatus.EPUISE);
       await supabase.from("batches").delete().eq("id", id);
       showToast("Lot épuisé et archivé !");
       fetchBatches();
       return;
     }
 
-    if (status === "non_conforme") {
+    if (status === BatchStatus.NON_CONFORME) {
       const reason = window.prompt(
         "Raison de non-conformité (ex: moisissure, choc thermique...)",
       );
       if (reason === null) return; // annulé
       const error = await archiveBatch(
         batch,
-        "non_conforme",
+        BatchStatus.NON_CONFORME,
         reason || undefined,
       );
       // console.log("archiveBatch error:", error);
       // console.log("batch envoyé:", batch);
     }
 
-    if (status === "perime") {
-      await archiveBatch(batch, "perime");
+    if (status === BatchStatus.PERIME) {
+      await archiveBatch(batch, BatchStatus.PERIME);
     }
 
     const { error } = await supabase
@@ -159,9 +144,9 @@ export default function Suivi() {
       .eq("id", id);
     if (!error) {
       showToast(
-        status === "perime"
+        status === BatchStatus.PERIME
           ? "Lot marqué périmé."
-          : status === "non_conforme"
+          : status === BatchStatus.NON_CONFORME
             ? "Lot marqué non conforme."
             : "",
       );
@@ -187,10 +172,10 @@ export default function Suivi() {
     if (!matchSearch) return false;
 
     if (filter === "Actifs")
-      return b.status === "stock" || b.status === "ouvert";
-    if (filter === "En stock") return b.status === "stock";
-    if (filter === "Ouverts") return b.status === "ouvert";
-    if (filter === "Périmés") return b.status === "perime";
+      return b.status === BatchStatus.STOCK || b.status === BatchStatus.OUVERT;
+    if (filter === "En stock") return b.status === BatchStatus.STOCK;
+    if (filter === "Ouverts") return b.status === BatchStatus.OUVERT;
+    if (filter === "Périmés") return b.status === BatchStatus.PERIME;
     if (filter === "À retirer") {
       if (!b.week_receiving) return false;
       const dates = computeBatchesDates(
@@ -203,16 +188,16 @@ export default function Suivi() {
   });
 
   const getStatusInfo = (batch: Batch) => {
-    if (batch.status === "stock" || !batch.week_opening)
-      return getStatusStyle("stock");
-    if (batch.status === "perime") return getStatusStyle("perime");
-    if (batch.status === "non_conforme") return getStatusStyle("non_conforme");
+    if (batch.status === BatchStatus.STOCK || !batch.week_opening)
+      return getStatusStyle(BatchStatus.STOCK);
+    if (batch.status === BatchStatus.PERIME) return getStatusStyle(BatchStatus.PERIME);
+    if (batch.status === BatchStatus.NON_CONFORME) return getStatusStyle(BatchStatus.NON_CONFORME);
 
     const dates = computeBatchesDates(
       batch.week_receiving,
       batch.chocolate_type.week_lifetime,
     );
-    if (!dates) return getStatusStyle("stock");
+    if (!dates) return getStatusStyle(BatchStatus.STOCK);
 
     return getStatusStyle(dates.status);
   };
@@ -564,9 +549,9 @@ export default function Suivi() {
                   </div>
 
                   <div className="mt-4 flex gap-2">
-                    {batch.status !== "perime" && batch.status !== "epuise" && (
+                    {batch.status !== BatchStatus.PERIME && batch.status !== BatchStatus.EPUISE && (
                       <>
-                        {batch.status === "stock" && (
+                        {batch.status === BatchStatus.STOCK && (
                           <button
                             onClick={(e) => openBatch(batch.id, e)}
                             className="flex-1 bg-amber-50 text-amber-800 border border-amber-200/60 hover:bg-amber-100/70 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
@@ -589,7 +574,7 @@ export default function Suivi() {
                           </button>
                         )}
                         <button
-                          onClick={(e) => updateStatus(batch.id, "perime", e)}
+                          onClick={(e) => updateStatus(batch.id, BatchStatus.PERIME, e)}
                           className="flex-1 bg-red-50/60 text-red-600 border border-red-100 hover:bg-red-50 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
                         >
                           <svg
@@ -610,7 +595,7 @@ export default function Suivi() {
                         </button>
                         <button
                           onClick={(e) =>
-                            updateStatus(batch.id, "non_conforme", e)
+                            updateStatus(batch.id, BatchStatus.NON_CONFORME, e)
                           }
                           className="flex-1 bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
                         >
@@ -631,7 +616,7 @@ export default function Suivi() {
                           Non conforme
                         </button>
                         <button
-                          onClick={(e) => updateStatus(batch.id, "epuise", e)}
+                          onClick={(e) => updateStatus(batch.id, BatchStatus.EPUISE, e)}
                           className="flex-1 bg-stone-50 text-stone-600 border border-stone-200/80 hover:bg-stone-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
                         >
                           <svg
@@ -653,7 +638,7 @@ export default function Suivi() {
                       </>
                     )}
 
-                    {batch.status === "perime" && (
+                    {batch.status === BatchStatus.PERIME && (
                       <button
                         onClick={(e) => deleteBatch(batch.id, e)}
                         className="flex-1 bg-red-600 text-white hover:bg-red-700 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"

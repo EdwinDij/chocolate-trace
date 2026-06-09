@@ -1,24 +1,29 @@
 const WITHDRAWAL_WEEKS = 2;
 
-export function getISOWeek(date = new Date()) {
+export function getISOWeek(date: Date = new Date()): number {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0);
   d.setDate(d.getDate() + 3 - ((d.getDay() + 6) % 7));
   const week1 = new Date(d.getFullYear(), 0, 4);
   return (
     1 +
-    Math.round(((d - week1) / 86400000 - 3 + ((week1.getDay() + 6) % 7)) / 7)
+    Math.round(
+      ((d.getTime() - week1.getTime()) / 86400000 -
+        3 +
+        ((week1.getDay() + 6) % 7)) /
+        7,
+    )
   );
 }
 
-export function getCurrentWeekLabel() {
+export function getCurrentWeekLabel(): string {
   const now = new Date();
   const week = getISOWeek(now);
   const year = now.getFullYear();
   return `S${String(week).padStart(2, "0")}-${year}`;
 }
 
-export function parseWeekLabel(label) {
+export function parseWeekLabel(label: string | null | undefined): Date | null {
   const match = label?.match(/^S(\d{1,2})-(\d{4})$/);
   if (!match) return null;
   const week = parseInt(match[1]);
@@ -30,16 +35,17 @@ export function parseWeekLabel(label) {
   return monday;
 }
 
-export function addWeeks(date, weeks) {
+export function addWeeks(date: Date, weeks: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + weeks * 7);
   return result;
 }
 
-export function weekDiff(dateA, dateB) {
-  return Math.round((dateB - dateA) / (7 * 86400000));
+export function weekDiff(dateA: Date, dateB: Date): number {
+  return Math.round((dateB.getTime() - dateA.getTime()) / (7 * 86400000));
 }
-export function formatDate(date) {
+
+export function formatDate(date: Date): string {
   return date.toLocaleDateString("fr-FR", {
     day: "numeric",
     month: "long",
@@ -47,14 +53,19 @@ export function formatDate(date) {
   });
 }
 
-// /**
-//   Calcule des dates clées d'un lot ouvert
-//   @param {string} weekOpening - "S22-2025"
-//   @param {number} lifeWeeks   - durée de vie du type (ex: 5)
-//   @returns {{ expiryWeek, withdrawalWeek, weeksUntilWithdrawal, status }}
-//
+export interface BatchDates {
+  expiryWeek: string;
+  withdrawalWeek: string;
+  expiryDate: string;
+  withdrawalDate: string;
+  weeksUntilWithdrawal: number;
+  status: "expired" | "warning" | "ok";
+}
 
-export function computeBatchesDates(weekReceiving, lifeWeeks) {
+export function computeBatchesDates(
+  weekReceiving: string,
+  lifeWeeks: number,
+): BatchDates | null {
   const receivingDate = parseWeekLabel(weekReceiving);
   if (!receivingDate) return null;
 
@@ -75,14 +86,22 @@ export function computeBatchesDates(weekReceiving, lifeWeeks) {
   };
 }
 
-export function computeStatus(weeksUntilWithdrawal) {
+export function computeStatus(
+  weeksUntilWithdrawal: number,
+): "expired" | "warning" | "ok" {
   if (weeksUntilWithdrawal <= 0) return "expired"; // À retirer
   if (weeksUntilWithdrawal <= 2) return "warning"; // Attention
   return "ok"; // En bonne forme
 }
 
+export interface StatusStyle {
+  bg: string;
+  text: string;
+  label: string;
+}
+
 //retourne les classe tailwind
-export function getStatusStyle(status) {
+export function getStatusStyle(status: string): StatusStyle {
   switch (status) {
     case "expired":
       return { bg: "bg-red-100", text: "text-red-700", label: "À retirer" };
