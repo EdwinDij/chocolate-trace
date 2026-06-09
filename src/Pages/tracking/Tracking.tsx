@@ -24,6 +24,7 @@ interface Batch {
   chocolate_type: {
     name: string;
     week_lifetime: number;
+    type: string;
   };
 }
 
@@ -42,6 +43,7 @@ export default function Suivi() {
   const [filter, setFilter] = useState<Filter>("Actifs");
   const [showForm, setShowForm] = useState(false);
   const { toast, showToast, hideToast } = useToast();
+  const [typeFilter, setTypeFilter] = useState<string | null>(null);
 
   // Form state
   const [chocolate, setChocolate] = useState<ChocolateType[]>([]);
@@ -60,7 +62,7 @@ export default function Suivi() {
   const fetchBatches = async () => {
     const { data, error } = await supabase
       .from("batches")
-      .select("*, chocolate_type!type_id(name, week_lifetime)")
+      .select("*, chocolate_type!type_id(name, week_lifetime, type)")
       .order("created_at", { ascending: false });
     if (!error) setBatches(data || []);
     setLoading(false);
@@ -185,7 +187,7 @@ export default function Suivi() {
       b.chocolate_type.name.toLowerCase().includes(search.toLowerCase());
 
     if (!matchSearch) return false;
-
+    if (typeFilter && b.chocolate_type.type !== typeFilter) return false;
     if (filter === "Actifs")
       return b.status === "stock" || b.status === "ouvert";
     if (filter === "En stock") return b.status === "stock";
@@ -485,6 +487,24 @@ export default function Suivi() {
           ))}
         </div>
 
+        {/* Filtres par type */}
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4">
+          {[null, "ganache", "praliné", "pâte d'amandes"].map((t) => (
+            <button
+              key={t ?? "tous"}
+              onClick={() => setTypeFilter(t)}
+              className={`flex-shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 border
+        ${
+          typeFilter === t
+            ? "bg-[#3E2723] text-[#FFF8E1] border-[#3E2723]"
+            : "bg-white text-stone-400 border-stone-200/80 hover:text-stone-600"
+        }`}
+            >
+              {t ?? "Tous les types"}
+            </button>
+          ))}
+        </div>
+
         {/* Liste principale des lots */}
         <div className="mt-4 flex flex-col gap-3">
           {loading ? (
@@ -699,7 +719,7 @@ export default function Suivi() {
           onClose={() => setShowBarcodeScanner(false)}
         />
       )}
-      
+
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={hideToast} />
       )}
