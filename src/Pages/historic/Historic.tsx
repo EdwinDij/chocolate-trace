@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabase";
+import { BatchStatus } from "../../types/batch";
 
 interface HistoricEntry {
   id: string;
@@ -15,20 +16,20 @@ const STATUS_STYLE: Record<
   string,
   { bg: string; text: string; label: string }
 > = {
-  perime: { bg: "bg-red-100", text: "text-red-600", label: "Périmé" },
-  non_conforme: {
+  [BatchStatus.PERIME]: { bg: "bg-red-100", text: "text-red-600", label: "Périmé" },
+  [BatchStatus.NON_CONFORME]: {
     bg: "bg-purple-100",
     text: "text-purple-600",
     label: "Non conforme",
   },
-  epuise: { bg: "bg-stone-100", text: "text-stone-500", label: "Épuisé" },
+  [BatchStatus.EPUISE]: { bg: "bg-stone-100", text: "text-stone-500", label: "Épuisé" },
 };
 
 export default function Historic() {
   const [entries, setEntries] = useState<HistoricEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<
-    "tous" | "perime" | "non_conforme" | "epuise"
+    "tous" | BatchStatus.PERIME | BatchStatus.NON_CONFORME | BatchStatus.EPUISE
   >("tous");
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -54,9 +55,9 @@ export default function Historic() {
   );
 
   const counts = {
-    perime: entries.filter((e) => e.status === "perime").length,
-    non_conforme: entries.filter((e) => e.status === "non_conforme").length,
-    epuise: entries.filter((e) => e.status === "epuise").length,
+    perime: entries.filter((e) => e.status === BatchStatus.PERIME).length,
+    non_conforme: entries.filter((e) => e.status === BatchStatus.NON_CONFORME).length,
+    epuise: entries.filter((e) => e.status === BatchStatus.EPUISE).length,
   };
 
   const groupByDate = (entries: HistoricEntry[]) => {
@@ -126,7 +127,7 @@ export default function Historic() {
       </div>
 
       <div className="px-6 mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 justify-center">
-        {(["tous", "perime", "non_conforme", "epuise"] as const).map((f) => (
+        {(["tous", BatchStatus.PERIME, BatchStatus.NON_CONFORME, BatchStatus.EPUISE] as const).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
@@ -139,9 +140,9 @@ export default function Historic() {
           >
             {f === "tous"
               ? "Tous"
-              : f === "perime"
+              : f === BatchStatus.PERIME
                 ? "Périmés"
-                : f === "non_conforme"
+                : f === BatchStatus.NON_CONFORME
                   ? "Non conformes"
                   : "Épuisés"}
           </button>

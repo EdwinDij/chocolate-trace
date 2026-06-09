@@ -8,17 +8,7 @@ import {
 } from "../../utils/dates";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
-interface Batch {
-  id: string;
-  reference: string;
-  week_receiving: string;
-  quantity: number;
-  status: string;
-  chocolate_type: {
-    name: string;
-    week_lifetime: number;
-  };
-}
+import { Batch } from "../../types/batch";
 
 export default function Alertes() {
   const [batches, setBatches] = useState<Batch[]>([]);
