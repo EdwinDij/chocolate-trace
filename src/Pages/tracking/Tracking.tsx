@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
@@ -21,6 +21,8 @@ const FILTERS = [
 ] as const;
 type Filter = (typeof FILTERS)[number];
 
+const PAGE_SIZE = 20;
+
 export default function Suivi() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,6 +30,8 @@ export default function Suivi() {
   const [showForm, setShowForm] = useState(false);
   const { toast, showToast, hideToast } = useToast();
   const [typeFilter, setTypeFilter] = useState<string | null>(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   // Form state
   const [chocolate, setChocolate] = useState<ChocolateType[]>([]);
@@ -39,16 +43,24 @@ export default function Suivi() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   useEffect(() => {
-    fetchBatches();
+    fetchBatches(0);
     fetchChocolateTypes();
   }, []);
 
-  const fetchBatches = async () => {
+  const fetchBatches = async (pageIndex: number) => {
+    setLoading(true);
+    const from = pageIndex * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("batches")
       .select("*, chocolate_type!type_id(name, week_lifetime, type)")
-      .order("created_at", { ascending: false });
-    if (!error) setBatches(data || []);
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    if (!error) {
+      setBatches((prev) => (pageIndex === 0 ? data || [] : [...prev, ...(data || [])]));
+      setHasMore((data?.length ?? 0) === PAGE_SIZE);
+      setPage(pageIndex);
+    }
     setLoading(false);
   };
 
@@ -78,7 +90,7 @@ export default function Suivi() {
       setWeekReceiving(getCurrentWeekLabel());
       setQuantity("");
       setShowForm(false);
-      fetchBatches();
+      fetchBatches(0);
     } else {
       showToast("Erreur lors de l'ajout.", "error");
     }
@@ -96,7 +108,7 @@ export default function Suivi() {
       .eq("id", id);
     if (!error) {
       showToast("Boîte marquée comme ouverte !");
-      fetchBatches();
+      fetchBatches(0);
     }
   };
 
@@ -117,7 +129,7 @@ export default function Suivi() {
       await archiveBatch(batch, BatchStatus.EPUISE);
       await supabase.from("batches").delete().eq("id", id);
       showToast("Lot épuisé et archivé !");
-      fetchBatches();
+      fetchBatches(0);
       return;
     }
 
@@ -151,7 +163,7 @@ export default function Suivi() {
             ? "Lot marqué non conforme."
             : "",
       );
-      fetchBatches();
+      fetchBatches(0);
     }
   };
 
@@ -161,45 +173,49 @@ export default function Suivi() {
     if (!confirm) return;
     await supabase.from("batches").delete().eq("id", id);
     showToast("Lot supprimé.");
-    fetchBatches();
+    fetchBatches(0);
   };
 
-  const filteredBatches = batches.filter((b) => {
-    const matchSearch =
-      search.trim() === "" ||
-      b.reference.toLowerCase().includes(search.toLowerCase()) ||
-      b.chocolate_type.name.toLowerCase().includes(search.toLowerCase());
+  // Dates pré-calculées une seule fois par lot
+  const batchesWithDates = useMemo(
+    () =>
+      batches.map((b) => ({
+        batch: b,
+        dates: b.week_receiving
+          ? computeBatchesDates(b.week_receiving, b.chocolate_type.week_lifetime)
+          : null,
+      })),
+    [batches],
+  );
 
-    if (!matchSearch) return false;
-    if (typeFilter && b.chocolate_type.type !== typeFilter) return false;
-    if (filter === "Actifs")
-      return b.status === BatchStatus.STOCK || b.status === BatchStatus.OUVERT;
-    if (filter === "En stock") return b.status === BatchStatus.STOCK;
-    if (filter === "Ouverts") return b.status === BatchStatus.OUVERT;
-    if (filter === "Périmés") return b.status === BatchStatus.PERIME;
-    if (filter === "À retirer") {
-      if (!b.week_receiving) return false;
-      const dates = computeBatchesDates(
-        b.week_receiving,
-        b.chocolate_type.week_lifetime,
-      );
-      return dates?.status === "expired" || dates?.status === "warning";
-    }
-    return true;
-  });
+  const filteredBatches = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return batchesWithDates
+      .filter(({ batch: b, dates }) => {
+        if (
+          q &&
+          !b.reference.toLowerCase().includes(q) &&
+          !b.chocolate_type.name.toLowerCase().includes(q)
+        )
+          return false;
+        if (typeFilter && b.chocolate_type.type !== typeFilter) return false;
+        if (filter === "Actifs")
+          return b.status === BatchStatus.STOCK || b.status === BatchStatus.OUVERT;
+        if (filter === "En stock") return b.status === BatchStatus.STOCK;
+        if (filter === "Ouverts") return b.status === BatchStatus.OUVERT;
+        if (filter === "Périmés") return b.status === BatchStatus.PERIME;
+        if (filter === "À retirer")
+          return dates?.status === "expired" || dates?.status === "warning";
+        return true;
+      });
+  }, [batchesWithDates, search, filter, typeFilter]);
 
-  const getStatusInfo = (batch: Batch) => {
+  const getStatusInfo = (batch: Batch, dates: ReturnType<typeof computeBatchesDates>) => {
     if (batch.status === BatchStatus.STOCK || !batch.week_opening)
       return getStatusStyle(BatchStatus.STOCK);
     if (batch.status === BatchStatus.PERIME) return getStatusStyle(BatchStatus.PERIME);
     if (batch.status === BatchStatus.NON_CONFORME) return getStatusStyle(BatchStatus.NON_CONFORME);
-
-    const dates = computeBatchesDates(
-      batch.week_receiving,
-      batch.chocolate_type.week_lifetime,
-    );
     if (!dates) return getStatusStyle(BatchStatus.STOCK);
-
     return getStatusStyle(dates.status);
   };
   const handleBarcodeScan = async (barcode: string) => {
@@ -245,7 +261,7 @@ export default function Suivi() {
     }
 
     showToast("Action annulée !");
-    fetchBatches();
+    fetchBatches(0);
   };
   return (
     <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
@@ -503,14 +519,8 @@ export default function Suivi() {
               Aucun lot trouvé dans cette catégorie.
             </p>
           ) : (
-            filteredBatches.map((batch) => {
-              const statusInfo = getStatusInfo(batch);
-              const dates = batch.week_receiving
-                ? computeBatchesDates(
-                    batch.week_receiving,
-                    batch.chocolate_type.week_lifetime,
-                  )
-                : null;
+            filteredBatches.map(({ batch, dates }) => {
+              const statusInfo = getStatusInfo(batch, dates);
 
               return (
                 <div
@@ -696,6 +706,15 @@ export default function Suivi() {
             })
           )}
         </div>
+
+        {hasMore && !loading && (
+          <button
+            onClick={() => fetchBatches(page + 1)}
+            className="w-full mt-3 py-3 rounded-xl text-xs font-bold text-amber-800 bg-white border border-amber-900/10 hover:bg-amber-50 transition-all"
+          >
+            Charger plus
+          </button>
+        )}
       </div>
       {showBarcodeScanner && (
         <BarcodeScanner
