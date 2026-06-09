@@ -26,6 +26,7 @@ const PAGE_SIZE = 20;
 export default function Suivi() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [filter, setFilter] = useState<Filter>("Actifs");
   const [showForm, setShowForm] = useState(false);
   const { toast, showToast, hideToast } = useToast();
@@ -48,7 +49,8 @@ export default function Suivi() {
   }, []);
 
   const fetchBatches = async (pageIndex: number) => {
-    setLoading(true);
+    if (pageIndex === 0) setLoading(true);
+    else setLoadingMore(true);
     const from = pageIndex * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
@@ -61,7 +63,8 @@ export default function Suivi() {
       setHasMore((data?.length ?? 0) === PAGE_SIZE);
       setPage(pageIndex);
     }
-    setLoading(false);
+    if (pageIndex === 0) setLoading(false);
+    else setLoadingMore(false);
   };
 
   const fetchChocolateTypes = async () => {
@@ -707,12 +710,13 @@ export default function Suivi() {
           )}
         </div>
 
-        {hasMore && !loading && (
+        {hasMore && (
           <button
             onClick={() => fetchBatches(page + 1)}
-            className="w-full mt-3 py-3 rounded-xl text-xs font-bold text-amber-800 bg-white border border-amber-900/10 hover:bg-amber-50 transition-all"
+            disabled={loadingMore}
+            className="w-full mt-3 py-3 rounded-xl text-xs font-bold text-amber-800 bg-white border border-amber-900/10 hover:bg-amber-50 transition-all disabled:opacity-50"
           >
-            Charger plus
+            {loadingMore ? "Chargement..." : "Charger plus"}
           </button>
         )}
       </div>

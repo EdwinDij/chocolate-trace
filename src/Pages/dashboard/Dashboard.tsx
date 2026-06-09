@@ -15,6 +15,7 @@ const PAGE_SIZE = 20;
 export default function Alertes() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
 
@@ -24,7 +25,8 @@ export default function Alertes() {
   }, []);
 
   const fetchBatches = async (pageIndex: number) => {
-    setLoading(true);
+    if (pageIndex === 0) setLoading(true);
+    else setLoadingMore(true);
     const from = pageIndex * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
@@ -38,7 +40,8 @@ export default function Alertes() {
       setHasMore((data?.length ?? 0) === PAGE_SIZE);
       setPage(pageIndex);
     }
-    setLoading(false);
+    if (pageIndex === 0) setLoading(false);
+    else setLoadingMore(false);
   };
 
   // Calcul unique des dates par lot — évite de recalculer 3× pour expired/warning/ok
@@ -248,13 +251,14 @@ export default function Alertes() {
         )}
       </div>
 
-      {hasMore && !loading && (
+      {hasMore && (
         <div className="px-4 mt-4 mb-8">
           <button
             onClick={() => fetchBatches(page + 1)}
-            className="w-full py-3 rounded-xl text-xs font-bold text-amber-800 bg-white border border-amber-900/10 hover:bg-amber-50 transition-all"
+            disabled={loadingMore}
+            className="w-full py-3 rounded-xl text-xs font-bold text-amber-800 bg-white border border-amber-900/10 hover:bg-amber-50 transition-all disabled:opacity-50"
           >
-            Charger plus
+            {loadingMore ? "Chargement..." : "Charger plus"}
           </button>
         </div>
       )}
