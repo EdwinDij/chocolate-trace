@@ -1,5 +1,5 @@
 // src/pages/Alertes.tsx (Dashboard)
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
@@ -10,49 +10,64 @@ import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { Batch } from "../../types/batch";
 
+const PAGE_SIZE = 20;
+
 export default function Alertes() {
   const [batches, setBatches] = useState<Batch[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
 
   const { showToast } = useToast();
   useEffect(() => {
-    fetchBatches();
+    fetchBatches(0);
   }, []);
 
-  const fetchBatches = async () => {
+  const fetchBatches = async (pageIndex: number) => {
+    if (pageIndex === 0) setLoading(true);
+    else setLoadingMore(true);
+    const from = pageIndex * PAGE_SIZE;
+    const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("batches")
       .select("*, chocolate_type!type_id(name, week_lifetime)")
       .in("status", ["stock", "ouvert"])
-      .order("created_at", { ascending: true });
-    if (!error) setBatches(data || []);
-    setLoading(false);
+      .order("created_at", { ascending: true })
+      .range(from, to);
+    if (!error) {
+      setBatches((prev) => (pageIndex === 0 ? data || [] : [...prev, ...(data || [])]));
+      setHasMore((data?.length ?? 0) === PAGE_SIZE);
+      setPage(pageIndex);
+    }
+    if (pageIndex === 0) setLoading(false);
+    else setLoadingMore(false);
   };
 
-  // Filtrage automatique des statuts de fraîcheur
-  const expired = batches.filter((b) => {
-    const d = computeBatchesDates(
-      b.week_receiving,
-      b.chocolate_type.week_lifetime,
-    );
-    return d?.status === "expired";
-  });
+  // Calcul unique des dates par lot — évite de recalculer 3× pour expired/warning/ok
+  const batchesWithDates = useMemo(
+    () =>
+      batches.map((b) => ({
+        batch: b,
+        dates: computeBatchesDates(b.week_receiving, b.chocolate_type.week_lifetime),
+      })),
+    [batches],
+  );
 
-  const warning = batches.filter((b) => {
-    const d = computeBatchesDates(
-      b.week_receiving,
-      b.chocolate_type.week_lifetime,
-    );
-    return d?.status === "warning";
-  });
+  const expired = useMemo(
+    () => batchesWithDates.filter(({ dates }) => dates?.status === "expired").map(({ batch }) => batch),
+    [batchesWithDates],
+  );
 
-  const ok = batches.filter((b) => {
-    const d = computeBatchesDates(
-      b.week_receiving,
-      b.chocolate_type.week_lifetime,
-    );
-    return d?.status === "ok";
-  });
+  const warning = useMemo(
+    () => batchesWithDates.filter(({ dates }) => dates?.status === "warning").map(({ batch }) => batch),
+    [batchesWithDates],
+  );
+
+  const ok = useMemo(
+    () => batchesWithDates.filter(({ dates }) => dates?.status === "ok").map(({ batch }) => batch),
+    [batchesWithDates],
+  );
 
   const deleteBatch = async (id: string) => {
     const { error } = await supabase.from("batches").delete().eq("id", id);
@@ -235,6 +250,18 @@ export default function Alertes() {
           </div>
         )}
       </div>
+
+      {hasMore && (
+        <div className="px-4 mt-4 mb-8">
+          <button
+            onClick={() => fetchBatches(page + 1)}
+            disabled={loadingMore}
+            className="w-full py-3 rounded-xl text-xs font-bold text-amber-800 bg-white border border-amber-900/10 hover:bg-amber-50 transition-all disabled:opacity-50"
+          >
+            {loadingMore ? "Chargement..." : "Charger plus"}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
