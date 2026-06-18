@@ -73,7 +73,7 @@ export default function Alertes() {
     const { error } = await supabase.from("batches").delete().eq("id", id);
     if (!error) {
       showToast("Lot supprimé avec succès.", "success");
-      fetchBatches();
+      fetchBatches(0);
     }
   };
   // Composant de carte purement informatif (Style mini-badge)
