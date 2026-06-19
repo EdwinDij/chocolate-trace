@@ -45,7 +45,7 @@ export default function TeamPage() {
     currentRole: "responsable" | "employe",
   ) => {
     const newRole =
-      currentRole === "responsable" ? "employe" : "passer en responsable";
+      currentRole === "responsable" ? "employe" : "responsable";
     const { error } = await supabase
       .from("shop_member")
       .update({ role: newRole })
@@ -209,7 +209,7 @@ export default function TeamPage() {
                       }
                       className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-xl hover:bg-teal-100 active:scale-95 transition-all"
                     >
-                      {m.role === "responsable" ? "Employé" : "Changer enResponsable"}
+                      {m.role === "responsable" ? "→ Employé" : "→ Responsable"}
                     </button>
                   )}
                 </div>
