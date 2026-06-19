@@ -23,8 +23,7 @@ export default function TeamPage() {
   const [generatingLink, setGeneratingLink] = useState(false);
 
   const canManage =
-    currentMember?.role === "gerant" ||
-    currentMember?.role === "responsable";
+    currentMember?.role === "gerant" || currentMember?.role === "responsable";
 
   useEffect(() => {
     if (shopId) fetchMembers();
@@ -44,7 +43,8 @@ export default function TeamPage() {
     memberId: string,
     currentRole: "responsable" | "employe",
   ) => {
-    const newRole = currentRole === "responsable" ? "employe" : "responsable";
+    const newRole =
+      currentRole === "responsable" ? "employe" : "passer en responsable";
     const { error } = await supabase
       .from("shop_member")
       .update({ role: newRole })
@@ -61,7 +61,9 @@ export default function TeamPage() {
     if (!shopId) return;
     setGeneratingLink(true);
     const token = crypto.randomUUID();
-    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+    const expiresAt = new Date(
+      Date.now() + 7 * 24 * 60 * 60 * 1000,
+    ).toISOString();
 
     const { error } = await supabase.from("invitations").insert({
       shop_id: shopId,
@@ -155,7 +157,9 @@ export default function TeamPage() {
                 disabled={generatingLink}
                 className="w-full bg-ink-800 text-foam-100 py-2.5 rounded-xl text-sm font-bold tracking-wide active:scale-95 transition-all disabled:opacity-50"
               >
-                {generatingLink ? "Génération..." : "Générer un lien d'invitation"}
+                {generatingLink
+                  ? "Génération..."
+                  : "Générer un lien d'invitation"}
               </button>
             )}
           </div>
@@ -197,22 +201,16 @@ export default function TeamPage() {
                     {roleLabel(m.role)}
                   </span>
 
-                  {canManage &&
-                    m.role !== "gerant" && (
-                      <button
-                        onClick={() =>
-                          changeRole(
-                            m.id,
-                            m.role as "responsable" | "employe",
-                          )
-                        }
-                        className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-xl hover:bg-teal-100 active:scale-95 transition-all"
-                      >
-                        {m.role === "responsable"
-                          ? "→ Employé"
-                          : "→ Responsable"}
-                      </button>
-                    )}
+                  {canManage && m.role !== "gerant" && (
+                    <button
+                      onClick={() =>
+                        changeRole(m.id, m.role as "responsable" | "employe")
+                      }
+                      className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-xl hover:bg-teal-100 active:scale-95 transition-all"
+                    >
+                      {m.role === "responsable" ? "Employé" : "Changer enResponsable"}
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
