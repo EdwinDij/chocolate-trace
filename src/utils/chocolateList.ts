@@ -1,4 +1,4 @@
-interface Chocolate {
+interface ProductC {
     name: string;
     life_weeks: number;
     type: string;
@@ -6,7 +6,7 @@ interface Chocolate {
 
 const life_weeks_ganache = 5;
 const life_weeks_praline = 6;
-export const chocolateList: Chocolate[] = [
+export const ProductList: ProductC[] = [
     // ── GANACHES (durée de vie : 5 semaines) ──────────────────
     { name: "Citron Noir", life_weeks: life_weeks_ganache, type: "ganache" },
     { name: "Poivre Noir", life_weeks: life_weeks_ganache, type: "ganache" },

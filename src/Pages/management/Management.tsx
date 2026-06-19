@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
-import { chocolateList } from "../../utils/chocolateList";
+import { ProductList } from "../../utils/chocolateList";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { Product } from "../../types/productType";
@@ -9,7 +9,7 @@ import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
 import { useShop } from "../../context/ShopContext";
 
 export default function Management() {
-  const [chocolate, setChocolate] = useState<Product[]>([]);
+  const [product, setProduct] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -38,7 +38,7 @@ export default function Management() {
       .select("*")
       .eq("shop_id", shopId)
       .order("name");
-    if (!error) setChocolate(data || []);
+    if (!error) setProduct(data || []);
     setLoading(false);
   };
 
@@ -79,10 +79,10 @@ export default function Management() {
     }
   }
 
-  const handleSelectChocolate = (e: React.ChangeEvent<HTMLSelectElement>) => {
+  const handleSelectProduct = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedName = e.target.value;
     setName(selectedName);
-    const found = chocolateList.find((c) => c.name === selectedName);
+    const found = ProductList.find((c) => c.name === selectedName);
     if (found) setLifeWeeks(String(found.life_weeks));
     else setLifeWeeks("");
   };
@@ -133,7 +133,7 @@ export default function Management() {
             </p>
           </div>
           <span className="text-[10px] bg-ink-800 text-foam-100 border border-teal-500 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-            {chocolate.length} Référence{chocolate.length > 1 ? "s" : ""}
+            {product.length} Référence{product.length > 1 ? "s" : ""}
           </span>
         </div>
       </header>
@@ -182,7 +182,7 @@ export default function Management() {
                   d="M12 4.5v15m7.5-7.5h-15"
                 />
               </svg>
-              Ajouter un chocolat
+              Ajouter un produit
             </>
           )}
         </button>
@@ -196,7 +196,7 @@ export default function Management() {
               </label>
               <select
                 value={name}
-                onChange={handleSelectChocolate}
+                onChange={handleSelectProduct}
                 className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk text-slate-800 transition-all appearance-none shadow-inner"
                 style={{
                   backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
@@ -206,7 +206,7 @@ export default function Management() {
                 }}
               >
                 <option value="">Sélectionner dans le grimoire...</option>
-                {chocolateList.map((choco) => (
+                {ProductList.map((choco) => (
                   <option key={choco.name} value={choco.name}>
                     {choco.name}
                   </option>
@@ -278,13 +278,13 @@ export default function Management() {
                 Lecture du catalogue...
               </p>
             </div>
-          ) : chocolate.length === 0 ? (
+          ) : product.length === 0 ? (
             <p className="text-center text-amber-900/40 text-sm py-8 bg-card rounded-2xl border border-slate-200 shadow-sm font-medium">
               Le catalogue est vide pour le moment.
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {chocolate.map((choco) => (
+              {product.map((choco) => (
                 <li
                   key={choco.id}
                   className="bg-card rounded-xl px-4 py-3 shadow-sm border border-stone-200"
