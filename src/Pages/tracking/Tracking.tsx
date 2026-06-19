@@ -225,9 +225,10 @@ export default function Suivi() {
     () =>
       batches.map((b) => ({
         batch: b,
-        dates: b.week_receiving
-          ? computeBatchesDates(b.week_receiving, b.products.week_lifetime)
-          : null,
+        dates:
+          b.week_receiving && b.products.week_lifetime != null
+            ? computeBatchesDates(b.week_receiving, b.products.week_lifetime)
+            : null,
       })),
     [batches],
   );
