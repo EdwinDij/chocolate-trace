@@ -18,6 +18,7 @@ export default function InvitePage() {
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [status, setStatus] = useState<"loading" | "valid" | "invalid" | "success">("loading");
   const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -59,15 +60,17 @@ export default function InvitePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim() || !email.trim() || password.length < 8 || !invitation) return;
+    if (!firstName.trim() || !lastName.trim() || !email.trim() || password.length < 8 || !invitation) return;
     setSubmitting(true);
     setError(null);
+
+    const displayName = `${firstName.trim()} ${lastName.trim()}`;
 
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
       email: email.trim(),
       password,
       options: {
-        data: { display_name: firstName.trim() },
+        data: { display_name: displayName },
       },
     });
 
@@ -85,7 +88,7 @@ export default function InvitePage() {
       user_id: authData.user.id,
       shop_id: invitation.shop_id,
       role: invitation.role ?? "employe",
-      display_name: firstName.trim(),
+      display_name: displayName,
     });
 
     if (memberError) {
@@ -166,18 +169,33 @@ export default function InvitePage() {
         </div>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <div>
-            <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
-              Prénom
-            </label>
-            <input
-              type="text"
-              value={firstName}
-              onChange={(e) => setFirstName(e.target.value)}
-              placeholder="ex. Marie"
-              className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
-              required
-            />
+          <div className="flex gap-3">
+            <div className="flex-1">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
+                Prénom
+              </label>
+              <input
+                type="text"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Marie"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
+                required
+              />
+            </div>
+            <div className="flex-1">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
+                Nom
+              </label>
+              <input
+                type="text"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Dupont"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
+                required
+              />
+            </div>
           </div>
 
           <div>
@@ -218,7 +236,7 @@ export default function InvitePage() {
           <button
             type="submit"
             disabled={
-              submitting || !firstName.trim() || !email.trim() || password.length < 8
+              submitting || !firstName.trim() || !lastName.trim() || !email.trim() || password.length < 8
             }
             className="w-full bg-ink-800 text-foam-100 py-3 rounded-xl text-sm font-bold tracking-wide active:scale-95 transition-all disabled:opacity-40 mt-1"
           >

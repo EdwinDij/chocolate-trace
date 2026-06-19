@@ -31,6 +31,8 @@ export default function Auth() {
   const [tab, setTab] = useState<Tab>("connexion");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
+  const [firstName, setFirstName] = useState<string>("");
+  const [lastName, setLastName] = useState<string>("");
   const [shop, setShop] = useState<string>("");
   const [work, setWork] = useState<string>("");
   const [remember, setRemember] = useState<boolean>(false);
@@ -60,10 +62,13 @@ export default function Auth() {
       return;
     }
 
+    const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
+
     //créer l'utilisateur dans Supabase
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
+      options: { data: { display_name: displayName } },
     });
 
     if (signUpError || !data.user) {
@@ -95,6 +100,7 @@ export default function Auth() {
       user_id: userId,
       shop_id: shopData.id,
       role: "gerant",
+      display_name: displayName || null,
     });
 
     if (memberError) {
@@ -155,6 +161,35 @@ export default function Auth() {
           {/* Champs inscription uniquement */}
           {tab === "inscription" && (
             <>
+              <div className="flex gap-3">
+                <div className="flex-1">
+                  <label className="text-micro font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                    Prénom
+                  </label>
+                  <input
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    placeholder="ex. Marie"
+                    required
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-sunk text-slate-800 placeholder-slate-300 focus:outline-none focus:border-teal-500 transition-colors"
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-micro font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
+                    Nom
+                  </label>
+                  <input
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    placeholder="ex. Dupont"
+                    required
+                    className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-sunk text-slate-800 placeholder-slate-300 focus:outline-none focus:border-teal-500 transition-colors"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="text-micro font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
                   Nom de l'établissement
