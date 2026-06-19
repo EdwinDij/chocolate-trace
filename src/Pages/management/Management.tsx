@@ -8,18 +8,40 @@ import { Product } from "../../types/productType";
 import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
 import { useShop } from "../../context/ShopContext";
 
+function endOfWeekDate(weeks: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + weeks * 7);
+  const day = d.getDay();
+  if (day !== 0) d.setDate(d.getDate() + (7 - day));
+  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export default function Management() {
-  const [product, setProduct] = useState<Product[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+
   const [name, setName] = useState("");
   const [lifeWeeks, setLifeWeeks] = useState("");
   const [barcode, setBarcode] = useState("");
-  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
-  const [editName, setEditName] = useState("");
-  // const [editLifeWeeks, setEditLifeWeeks] = useState(""); au cas ou si ça venait à arriver dans le futr
-  const [editBarcode, setEditBarcode] = useState("");
+  const [category, setCategory] = useState("");
+  const [expireDate, setExpireDate] = useState("");
+
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [editBarcode, setEditBarcode] = useState("");
+  const [editCategory, setEditCategory] = useState("");
+  const [editExpireDate, setEditExpireDate] = useState("");
+
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   const { id } = useParams<{ id: string }>();
   const { shop } = useShop();
@@ -28,56 +50,56 @@ export default function Management() {
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
-    if (shopId) fetchProduct();
+    if (shopId) fetchProducts();
   }, [shopId]);
 
-  const fetchProduct = async () => {
+  const fetchProducts = async () => {
     if (!shopId) return;
     const { data, error } = await supabase
       .from("products")
       .select("*")
       .eq("shop_id", shopId)
       .order("name");
-    if (!error) setProduct(data || []);
+    if (!error) setProducts(data || []);
     setLoading(false);
   };
 
-  const addType = async (
-    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent,
-  ) => {
+  const addProduct = async (e: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !lifeWeeks || !shopId) return;
+    if (!name.trim() || !shopId) return;
 
     const { error } = await supabase.from("products").insert({
       name: name.trim(),
-      week_lifetime: parseInt(lifeWeeks),
+      category: category.trim() || null,
+      week_lifetime: lifeWeeks ? parseInt(lifeWeeks) : null,
+      expiration_date: expireDate || null,
       barcode: barcode.trim() || null,
       shop_id: shopId,
     });
 
     if (error) {
-      showToast("Erreur lors de l'ajout du type.", "error");
+      showToast("Erreur lors de l'ajout du produit.", "error");
       return;
     }
     setName("");
     setLifeWeeks("");
-    setShowForm(false);
     setBarcode("");
-    fetchProduct();
-    showToast("Type ajouté avec succès !");
+    setCategory("");
+    setExpireDate("");
+    setShowForm(false);
+    fetchProducts();
+    showToast("Produit ajouté avec succès !");
   };
 
-  async function deleteType(id: string) {
-    const { error } = await supabase.from("products").delete().eq("id", id);
+  const deleteProduct = async (productId: string) => {
+    const { error } = await supabase.from("products").delete().eq("id", productId);
     if (!error) {
-      fetchProduct();
-      showToast("Chocolat supprimé avec succès !");
+      fetchProducts();
+      showToast("Produit supprimé !");
     } else {
-      showToast(
-        "Erreur lors de la suppression du chocolat. Vérifiez votre dashboard",
-      );
+      showToast("Erreur lors de la suppression.", "error");
     }
-  }
+  };
 
   const handleSelectProduct = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedName = e.target.value;
@@ -88,19 +110,18 @@ export default function Management() {
   };
 
   const handleBarcodeScan = (result: string) => {
-    if (editingId) {
-      setEditBarcode(result);
-    } else {
-      setBarcode(result);
-    }
+    if (editingId) setEditBarcode(result);
+    else setBarcode(result);
     setShowBarcodeScanner(false);
     showToast("Code-barres scanné !");
   };
 
-  const startEdit = (type: Product) => {
-    setEditingId(type.id);
-    setEditName(type.name);
-    setEditBarcode(type.barcode || "");
+  const startEdit = (p: Product) => {
+    setEditingId(p.id);
+    setEditName(p.name);
+    setEditBarcode(p.barcode || "");
+    setEditCategory(p.category || "");
+    setEditExpireDate(p.expiration_date || "");
   };
 
   const saveEdit = async () => {
@@ -110,36 +131,41 @@ export default function Management() {
       .update({
         name: editName.trim(),
         barcode: editBarcode.trim() || null,
+        category: editCategory.trim() || null,
+        expiration_date: editExpireDate || null,
       })
       .eq("id", editingId!);
     if (!error) {
-      showToast("Chocolat mis à jour !");
+      showToast("Produit mis à jour !");
       setEditingId(null);
-      fetchProduct();
+      fetchProducts();
     }
   };
 
+  const grouped = products.reduce<Record<string, Product[]>>((acc, p) => {
+    const key = p.category || "Sans catégorie";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(p);
+    return acc;
+  }, {});
+
   return (
     <div className="min-h-screen bg-app pb-24 font-sans antialiased">
-      {/* Header en Cohérence avec Alertes */}
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tight text-foam-100">
-              Catalogue
-            </h1>
+            <h1 className="text-xl font-black tracking-tight text-foam-100">Catalogue</h1>
             <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
               {shop?.name} — Recettes & conservations
             </p>
           </div>
           <span className="text-[10px] bg-ink-800 text-foam-100 border border-teal-500 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
-            {product.length} Référence{product.length > 1 ? "s" : ""}
+            {products.length} Référence{products.length > 1 ? "s" : ""}
           </span>
         </div>
       </header>
 
       <div className="px-4 mt-5">
-        {/* Bouton d'action Toggle Formulaire */}
         <button
           onClick={() => setShowForm(!showForm)}
           className={`w-full py-3 rounded-2xl font-bold text-sm tracking-wide transition-all duration-200 shadow-sm border flex items-center justify-center gap-2 active:scale-[0.98] ${
@@ -150,54 +176,31 @@ export default function Management() {
         >
           {showForm ? (
             <>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-4 h-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6 18 18 6M6 6l12 12"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
               </svg>
-              Annuler la saisie
+              Annuler
             </>
           ) : (
             <>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                fill="none"
-                viewBox="0 0 24 24"
-                strokeWidth={2.5}
-                stroke="currentColor"
-                className="w-4 h-4"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 4.5v15m7.5-7.5h-15"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
               Ajouter un produit
             </>
           )}
         </button>
 
-        {/* Formulaire d'ajout style Carte Premium */}
         {showForm && (
-          <div className="bg-card rounded-2xl p-4 mt-4 shadow-[0_4px_16px_-4px_rgba(62,39,35,0.08)] border border-slate-200 animate-fadeIn">
+          <div className="bg-card rounded-2xl p-4 mt-4 shadow-sm border border-slate-200">
             <div className="mb-4">
               <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
-                Nom du produit d'artisanat
+                Nom du produit
               </label>
               <select
                 value={name}
                 onChange={handleSelectProduct}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk text-slate-800 transition-all appearance-none shadow-inner"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk text-slate-800 appearance-none shadow-inner"
                 style={{
                   backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
                   backgroundRepeat: "no-repeat",
@@ -206,30 +209,65 @@ export default function Management() {
                 }}
               >
                 <option value="">Sélectionner dans le grimoire...</option>
-                {ProductList.map((choco) => (
-                  <option key={choco.name} value={choco.name}>
-                    {choco.name}
-                  </option>
+                {ProductList.map((c) => (
+                  <option key={c.name} value={c.name}>{c.name}</option>
                 ))}
               </select>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="ou saisir un nom libre..."
+                className="mt-2 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
+                Catégorie
+              </label>
+              <input
+                type="text"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                placeholder="ex. Chocolat, Confiserie, Viennoiserie..."
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
+              />
+            </div>
+
+            <div className="mb-4">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
+                Durée de conservation (semaines)
+              </label>
+              <input
+                type="number"
+                value={lifeWeeks}
+                onChange={(e) => setLifeWeeks(e.target.value)}
+                placeholder="ex. 6"
+                min={1}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
+              />
+              {lifeWeeks && parseInt(lifeWeeks) > 0 && (
+                <p className="text-xs text-teal-600 font-medium mt-1 px-1">
+                  → Fin de semaine estimée : {endOfWeekDate(parseInt(lifeWeeks))}
+                </p>
+              )}
+            </div>
+
+            <div className="mb-4">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
+                Date d'expiration fixe (optionnel)
+              </label>
+              <input
+                type="date"
+                value={expireDate}
+                onChange={(e) => setExpireDate(e.target.value)}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk shadow-inner text-slate-700"
+              />
             </div>
 
             <div className="mb-5">
               <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
-                Durée de fraîcheur optimale
-              </label>
-              <div className="relative flex items-center">
-                <input
-                  type="text"
-                  value={lifeWeeks ? `${lifeWeeks} semaines` : ""}
-                  readOnly
-                  placeholder="Sélection automatique"
-                  className="w-full border border-stone-200/60 rounded-xl px-3 py-2.5 text-sm bg-stone-100/80 font-semibold text-slate-500 shadow-inner"
-                />
-              </div>
-            </div>
-            <div className="mb-4">
-              <label className="text-sm text-slate-500 mb-1 block">
                 Code-barres (optionnel)
               </label>
               <div className="flex gap-2">
@@ -238,11 +276,11 @@ export default function Management() {
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
                   placeholder="ex. 2800118009449"
-                  className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
+                  className="flex-1 border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-teal-500 bg-sunk shadow-inner"
                 />
                 <button
                   onClick={() => setShowBarcodeScanner(true)}
-                  className="bg-ink-800 text-white px-3 rounded-lg text-lg"
+                  className="bg-ink-800 text-white px-3 rounded-xl text-lg"
                 >
                   📷
                 </button>
@@ -250,136 +288,128 @@ export default function Management() {
             </div>
 
             {showBarcodeScanner && (
-              <BarcodeScanner
-                onScan={handleBarcodeScan}
-                onClose={() => setShowBarcodeScanner(false)}
-              />
+              <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowBarcodeScanner(false)} />
             )}
+
             <button
-              onClick={addType}
-              disabled={!name}
-              className="w-full bg-ink-800 text-foam-100 hover:bg-ink-800 disabled:opacity-40 disabled:hover:bg-ink-800 py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-150 shadow-sm active:scale-95"
+              onClick={addProduct}
+              disabled={!name.trim()}
+              className="w-full bg-ink-800 text-foam-100 disabled:opacity-40 py-3 rounded-xl text-sm font-bold tracking-wide transition-all active:scale-95"
             >
               Enregistrer au catalogue
             </button>
           </div>
         )}
 
-        {/* Liste principale des types enregistrés */}
         <div className="mt-6">
-          <h2 className="text-[11px] font-bold text-amber-900/40 uppercase tracking-wider mb-3 px-1">
-            Produits enregistrés
-          </h2>
-
           {loading ? (
             <div className="flex flex-col items-center justify-center pt-12 gap-2">
               <div className="w-5 h-5 border-2 border-amber-900/20 border-t-amber-900 rounded-full animate-spin" />
-              <p className="text-center text-amber-900/40 text-xs font-medium">
-                Lecture du catalogue...
-              </p>
+              <p className="text-center text-amber-900/40 text-xs font-medium">Lecture du catalogue...</p>
             </div>
-          ) : product.length === 0 ? (
+          ) : products.length === 0 ? (
             <p className="text-center text-amber-900/40 text-sm py-8 bg-card rounded-2xl border border-slate-200 shadow-sm font-medium">
               Le catalogue est vide pour le moment.
             </p>
           ) : (
-            <ul className="flex flex-col gap-3">
-              {product.map((choco) => (
-                <li
-                  key={choco.id}
-                  className="bg-card rounded-xl px-4 py-3 shadow-sm border border-stone-200"
-                >
-                  {editingId === choco.id ? (
-                    // Mode édition
-                    <div className="flex flex-col gap-2">
-                      <input
-                        type="text"
-                        value={editName}
-                        onChange={(e) => setEditName(e.target.value)}
-                        className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
-                        placeholder="Nom"
-                      />
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={editBarcode}
-                          onChange={(e) => setEditBarcode(e.target.value)}
-                          className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
-                          placeholder="Code-barres"
-                        />
-                        <button
-                          onClick={() => setShowBarcodeScanner(true)}
-                          className="bg-ink-800 text-white px-3 rounded-lg text-lg"
-                        >
-                          📷
-                        </button>
-                      </div>
-                      <div className="flex gap-2 mt-1">
-                        <button
-                          onClick={saveEdit}
-                          className="flex-1 bg-ink-800 text-white py-2 rounded-lg text-sm font-medium"
-                        >
-                          ✓ Sauvegarder
-                        </button>
-                        <button
-                          onClick={() => setEditingId(null)}
-                          className="flex-1 bg-stone-100 text-slate-500 py-2 rounded-lg text-sm font-medium"
-                        >
-                          Annuler
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    // Mode affichage
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-slate-800">
-                          {choco.name}
-                        </p>
-                        <p className="text-xs text-slate-400 mt-0.5">
-                          {choco.week_lifetime} sem. · retrait à{" "}
-                          {choco.week_lifetime - 2} sem.
-                          {choco.barcode && <span> · 📷 {choco.barcode}</span>}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <button
-                          onClick={() => startEdit(choco)}
-                          className="text-amber-600 hover:text-teal-700 text-lg px-1"
-                          title="Modifier"
-                        >
-                          ✏️
-                        </button>
-                        <button
-                          onClick={() => deleteType(choco.id)}
-                          className="text-red-400 hover:text-red-600 text-lg px-1"
-                          title="Supprimer"
-                        >
-                          🗑
-                        </button>
-                      </div>
-                    </div>
-                  )}
-                </li>
-              ))}
-            </ul>
+            Object.entries(grouped).map(([cat, list]) => (
+              <div key={cat} className="mb-5">
+                <h2 className="text-[11px] font-bold text-amber-900/40 uppercase tracking-wider mb-2 px-1">
+                  {cat} ({list.length})
+                </h2>
+                <ul className="flex flex-col gap-3">
+                  {list.map((p) => (
+                    <li key={p.id} className="bg-card rounded-xl px-4 py-3 shadow-sm border border-stone-200">
+                      {editingId === p.id ? (
+                        <div className="flex flex-col gap-2">
+                          <input
+                            type="text"
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
+                            placeholder="Nom"
+                          />
+                          <input
+                            type="text"
+                            value={editCategory}
+                            onChange={(e) => setEditCategory(e.target.value)}
+                            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
+                            placeholder="Catégorie"
+                          />
+                          <input
+                            type="date"
+                            value={editExpireDate}
+                            onChange={(e) => setEditExpireDate(e.target.value)}
+                            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-teal-500 text-slate-700"
+                          />
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              value={editBarcode}
+                              onChange={(e) => setEditBarcode(e.target.value)}
+                              className="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
+                              placeholder="Code-barres"
+                            />
+                            <button
+                              onClick={() => setShowBarcodeScanner(true)}
+                              className="bg-ink-800 text-white px-3 rounded-xl text-lg"
+                            >
+                              📷
+                            </button>
+                          </div>
+                          <div className="flex gap-2 mt-1">
+                            <button onClick={saveEdit} className="flex-1 bg-ink-800 text-white py-2 rounded-xl text-sm font-medium">
+                              ✓ Sauvegarder
+                            </button>
+                            <button onClick={() => setEditingId(null)} className="flex-1 bg-stone-100 text-slate-500 py-2 rounded-xl text-sm font-medium">
+                              Annuler
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800 text-sm truncate">{p.name}</p>
+                            <div className="flex flex-wrap gap-x-3 mt-0.5">
+                              {p.week_lifetime && (
+                                <p className="text-xs text-slate-400">
+                                  {p.week_lifetime} sem. · retrait à {p.week_lifetime - 2} sem.
+                                </p>
+                              )}
+                              {p.expiration_date && (
+                                <p className="text-xs text-amber-600 font-medium">
+                                  DLC : {formatDate(p.expiration_date)}
+                                </p>
+                              )}
+                              {p.barcode && (
+                                <p className="text-xs text-slate-400">📷 {p.barcode}</p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <button onClick={() => startEdit(p)} className="text-amber-600 hover:text-teal-700 text-lg px-1">✏️</button>
+                            <button onClick={() => deleteProduct(p.id)} className="text-red-400 hover:text-red-600 text-lg px-1">🗑</button>
+                          </div>
+                        </div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))
           )}
         </div>
       </div>
+
       {showBarcodeScanner && (
-        <BarcodeScanner
-          onScan={handleBarcodeScan}
-          onClose={() => setShowBarcodeScanner(false)}
-        />
+        <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowBarcodeScanner(false)} />
       )}
+
       <div className="px-4 mt-8 pb-2">
-        <p className="text-center text-[10px] text-amber-900/30 font-medium">
-          © 2026 Edwin Dijeont
-        </p>
+        <p className="text-center text-[10px] text-amber-900/30 font-medium">© 2026 Edwin Dijeont</p>
       </div>
-      {toast && (
-        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
-      )}
+
+      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
     </div>
   );
 }
