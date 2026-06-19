@@ -242,7 +242,7 @@ export default function Suivi() {
         !b.products.name.toLowerCase().includes(q)
       )
         return false;
-      if (typeFilter && b.products.type !== typeFilter) return false;
+      if (typeFilter && b.products.category !== typeFilter) return false;
       if (filter === "Actifs")
         return (
           b.status === BatchStatus.STOCK || b.status === BatchStatus.OUVERT
@@ -265,12 +265,12 @@ export default function Suivi() {
     batch: Batch,
     dates: ReturnType<typeof computeBatchesDates>,
   ) => {
-    if (batch.status === BatchStatus.STOCK || !batch.week_opening)
-      return getStatusStyle(BatchStatus.STOCK);
     if (batch.status === BatchStatus.PERIME)
       return getStatusStyle(BatchStatus.PERIME);
     if (batch.status === BatchStatus.NON_CONFORME)
       return getStatusStyle(BatchStatus.NON_CONFORME);
+    if (batch.status === BatchStatus.STOCK || !batch.week_opening)
+      return getStatusStyle(BatchStatus.STOCK);
     if (batch.withdrawal_date || batch.expiration_date)
       return getStatusStyle(
         computeStatusFromDates(batch.withdrawal_date, batch.expiration_date),
@@ -458,7 +458,7 @@ export default function Suivi() {
 
             <div className="mb-3">
               <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
-                Type de chocolat
+                Produit
               </label>
               <select
                 value={typeId}

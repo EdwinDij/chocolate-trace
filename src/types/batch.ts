@@ -20,7 +20,6 @@ export interface Batch {
   expiration_date: string | null;
   withdrawal_date: string | null;
   products: {
-    type: string;
     name: string;
     week_lifetime: number | null;
     category: string | null;
