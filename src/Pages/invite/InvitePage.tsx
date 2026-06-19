@@ -81,6 +81,7 @@ export default function InvitePage() {
       user_id: authData.user.id,
       shop_id: invitation.shop_id,
       role: invitation.role ?? "employe",
+      display_name: firstName.trim(),
     });
 
     if (memberError) {

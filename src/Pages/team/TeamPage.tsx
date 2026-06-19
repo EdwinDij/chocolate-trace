@@ -9,6 +9,7 @@ interface Member {
   id: string;
   user_id: string;
   role: "gerant" | "responsable" | "employe";
+  display_name: string | null;
 }
 
 export default function TeamPage() {
@@ -33,7 +34,7 @@ export default function TeamPage() {
     setLoading(true);
     const { data, error } = await supabase
       .from("shop_member")
-      .select("id, user_id, role")
+      .select("id, user_id, role, display_name")
       .eq("shop_id", shopId);
     if (!error) setMembers(data || []);
     setLoading(false);
@@ -190,7 +191,7 @@ export default function TeamPage() {
               >
                 <div className="min-w-0">
                   <p className="font-bold text-[#3E2723] text-sm truncate">
-                    Membre {m.user_id.slice(0, 8)}
+                    {m.display_name ?? `Membre ${m.user_id.slice(0, 8)}`}
                   </p>
                 </div>
 
