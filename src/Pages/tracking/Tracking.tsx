@@ -3,6 +3,9 @@ import { useParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
+  computeStatusFromDates,
+  endOfWeekFromToday,
+  formatDateFR,
   getCurrentWeekLabel,
   getStatusStyle,
 } from "../../utils/dates";
@@ -41,6 +44,9 @@ export default function Suivi() {
   const [reference, setReference] = useState("");
   const [weekReceiving, setWeekReceiving] = useState(getCurrentWeekLabel());
   const [quantity, setQuantity] = useState("");
+  const [expirationDate, setExpirationDate] = useState("");
+  const [withdrawalDate, setWithdrawalDate] = useState("");
+  const [differentWithdrawal, setDifferentWithdrawal] = useState(false);
   const [search, setSearch] = useState("");
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
@@ -54,6 +60,19 @@ export default function Suivi() {
       fetchProducts();
     }
   }, [shopId]);
+
+  useEffect(() => {
+    const product = products.find((p) => p.id === typeId);
+    if (product?.week_lifetime) {
+      const dlc = endOfWeekFromToday(product.week_lifetime);
+      setExpirationDate(dlc);
+      setWithdrawalDate(dlc);
+    } else {
+      setExpirationDate("");
+      setWithdrawalDate("");
+    }
+    setDifferentWithdrawal(false);
+  }, [typeId, products]);
 
   const fetchBatches = async (pageIndex: number) => {
     if (pageIndex === 0) setLoading(true);
@@ -91,6 +110,8 @@ export default function Suivi() {
   const addBatch = async () => {
     if (!typeId || !reference.trim() || !weekReceiving || !quantity || !shopId)
       return;
+    const finalWithdrawal =
+      differentWithdrawal && withdrawalDate ? withdrawalDate : expirationDate || null;
     const { error } = await supabase.from("batches").insert({
       product_id: typeId,
       shop_id: shopId,
@@ -100,6 +121,8 @@ export default function Suivi() {
       quantity: parseInt(quantity),
       last_status: null,
       status: BatchStatus.STOCK,
+      expiration_date: expirationDate || null,
+      withdrawal_date: finalWithdrawal !== expirationDate ? finalWithdrawal : null,
     });
     if (!error) {
       showToast("Lot ajouté avec succès !");
@@ -107,6 +130,9 @@ export default function Suivi() {
       setReference("");
       setWeekReceiving(getCurrentWeekLabel());
       setQuantity("");
+      setExpirationDate("");
+      setWithdrawalDate("");
+      setDifferentWithdrawal(false);
       setShowForm(false);
       fetchBatches(0);
     } else {
@@ -223,8 +249,13 @@ export default function Suivi() {
       if (filter === "En stock") return b.status === BatchStatus.STOCK;
       if (filter === "Ouverts") return b.status === BatchStatus.OUVERT;
       if (filter === "Périmés") return b.status === BatchStatus.PERIME;
-      if (filter === "À retirer")
+      if (filter === "À retirer") {
+        if (b.withdrawal_date || b.expiration_date) {
+          const st = computeStatusFromDates(b.withdrawal_date, b.expiration_date);
+          return st === "expired" || st === "warning";
+        }
         return dates?.status === "expired" || dates?.status === "warning";
+      }
       return true;
     });
   }, [batchesWithDates, search, filter, typeFilter]);
@@ -239,6 +270,10 @@ export default function Suivi() {
       return getStatusStyle(BatchStatus.PERIME);
     if (batch.status === BatchStatus.NON_CONFORME)
       return getStatusStyle(BatchStatus.NON_CONFORME);
+    if (batch.withdrawal_date || batch.expiration_date)
+      return getStatusStyle(
+        computeStatusFromDates(batch.withdrawal_date, batch.expiration_date),
+      );
     if (!dates) return getStatusStyle(BatchStatus.STOCK);
     return getStatusStyle(dates.status);
   };
@@ -483,6 +518,59 @@ export default function Suivi() {
               </div>
             </div>
 
+            {/* DLC */}
+            <div className="mb-3">
+              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
+                Date de péremption (DLC)
+              </label>
+              <input
+                type="date"
+                value={expirationDate}
+                onChange={(e) => {
+                  setExpirationDate(e.target.value);
+                  if (!differentWithdrawal) setWithdrawalDate(e.target.value);
+                }}
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk shadow-inner text-slate-700"
+              />
+            </div>
+
+            {/* Retrait différent de la DLC */}
+            <div className="mb-4">
+              <label className="flex items-center gap-2 cursor-pointer mb-2">
+                <input
+                  type="checkbox"
+                  checked={differentWithdrawal}
+                  onChange={(e) => {
+                    setDifferentWithdrawal(e.target.checked);
+                    if (!e.target.checked) setWithdrawalDate(expirationDate);
+                  }}
+                  className="w-4 h-4 accent-ink-800"
+                />
+                <span className="text-xs font-semibold text-slate-600">
+                  Date de retrait différente de la DLC
+                </span>
+              </label>
+              {differentWithdrawal && (
+                <input
+                  type="date"
+                  value={withdrawalDate}
+                  max={expirationDate || undefined}
+                  onChange={(e) => setWithdrawalDate(e.target.value)}
+                  className="w-full border border-amber-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-500 bg-amber-50 shadow-inner text-slate-700"
+                />
+              )}
+              {!differentWithdrawal && expirationDate && (
+                <p className="text-xs text-slate-400 font-medium">
+                  Retrait = DLC ({formatDateFR(expirationDate)})
+                </p>
+              )}
+              {differentWithdrawal && withdrawalDate && expirationDate && (
+                <p className="text-xs text-amber-600 font-medium mt-1">
+                  Retrait {Math.round((new Date(expirationDate).getTime() - new Date(withdrawalDate).getTime()) / 86400000)} j. avant la DLC
+                </p>
+              )}
+            </div>
+
             <button
               onClick={addBatch}
               disabled={!typeId || !reference.trim() || !quantity}
@@ -583,7 +671,7 @@ export default function Suivi() {
                   {/* Ligne des dates de traçabilité */}
                   <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-stone-100 text-xs text-slate-500 font-medium">
                     <span className="flex items-center gap-1">
-                      <span className="text-stone-300">📦</span> Recu{" "}
+                      <span className="text-stone-300">📦</span> Reçu{" "}
                       <strong className="text-stone-700">
                         {batch.week_receiving}
                       </strong>
@@ -596,7 +684,25 @@ export default function Suivi() {
                         </strong>
                       </span>
                     )}
-                    {dates && (
+                    {batch.expiration_date && (
+                      <span className="flex items-center gap-1">
+                        <span className="text-stone-300">⏱</span> DLC :{" "}
+                        <strong className="text-stone-700">
+                          {formatDateFR(batch.expiration_date)}
+                        </strong>
+                      </span>
+                    )}
+                    {/* Retrait = withdrawal_date si différent de DLC, sinon = DLC */}
+                    {(batch.withdrawal_date || batch.expiration_date) && (
+                      <span className="flex items-center gap-1 ml-auto text-amber-900/80">
+                        <span className="text-amber-700/40">📅</span> Retrait :{" "}
+                        <strong className="font-bold text-amber-900">
+                          {formatDateFR(batch.withdrawal_date ?? batch.expiration_date!)}
+                        </strong>
+                      </span>
+                    )}
+                    {/* Fallback pour les anciens lots sans dates stockées */}
+                    {!batch.expiration_date && !batch.withdrawal_date && dates && (
                       <span className="flex items-center gap-1 ml-auto text-amber-900/80">
                         <span className="text-amber-700/40">📅</span> Retrait :{" "}
                         <strong className="font-bold text-amber-900">

@@ -94,6 +94,33 @@ export function computeStatus(
   return "ok"; // En bonne forme
 }
 
+export function endOfWeekFromToday(weeks: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + weeks * 7);
+  const day = d.getDay();
+  if (day !== 0) d.setDate(d.getDate() + (7 - day));
+  return d.toISOString().split("T")[0];
+}
+
+export function computeStatusFromDates(
+  withdrawalDate: string | null,
+  expirationDate: string | null,
+): "expired" | "warning" | "ok" {
+  const ref = withdrawalDate || expirationDate;
+  if (!ref) return "ok";
+  const diffWeeks =
+    (new Date(ref).getTime() - new Date().getTime()) / (7 * 86400000);
+  return computeStatus(diffWeeks);
+}
+
+export function formatDateFR(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export interface StatusStyle {
   bg: string;
   text: string;

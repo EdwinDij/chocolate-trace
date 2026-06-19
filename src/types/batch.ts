@@ -17,10 +17,12 @@ export interface Batch {
   last_status: string | null;
   shop_id: string;
   created_at: string;
+  expiration_date: string | null;
+  withdrawal_date: string | null;
   products: {
     type: string;
     name: string;
-    week_lifetime: number;
+    week_lifetime: number | null;
     category: string | null;
   };
 }
