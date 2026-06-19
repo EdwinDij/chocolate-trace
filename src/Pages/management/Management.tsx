@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
-import { ProductList } from "../../utils/chocolateList";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { Product } from "../../types/productType";
@@ -16,14 +15,6 @@ function endOfWeekDate(weeks: number): string {
   return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
 }
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 export default function Management() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -33,13 +24,12 @@ export default function Management() {
   const [lifeWeeks, setLifeWeeks] = useState("");
   const [barcode, setBarcode] = useState("");
   const [category, setCategory] = useState("");
-  const [expireDate, setExpireDate] = useState("");
 
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editBarcode, setEditBarcode] = useState("");
   const [editCategory, setEditCategory] = useState("");
-  const [editExpireDate, setEditExpireDate] = useState("");
+  const [editLifeWeeks, setEditLifeWeeks] = useState("");
 
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
@@ -66,13 +56,12 @@ export default function Management() {
 
   const addProduct = async (e: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !shopId) return;
+    if (!name.trim() || !category.trim() || !shopId) return;
 
     const { error } = await supabase.from("products").insert({
       name: name.trim(),
-      category: category.trim() || null,
+      category: category.trim(),
       week_lifetime: lifeWeeks ? parseInt(lifeWeeks) : null,
-      expiration_date: expireDate || null,
       barcode: barcode.trim() || null,
       shop_id: shopId,
     });
@@ -85,7 +74,6 @@ export default function Management() {
     setLifeWeeks("");
     setBarcode("");
     setCategory("");
-    setExpireDate("");
     setShowForm(false);
     fetchProducts();
     showToast("Produit ajouté avec succès !");
@@ -101,14 +89,6 @@ export default function Management() {
     }
   };
 
-  const handleSelectProduct = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedName = e.target.value;
-    setName(selectedName);
-    const found = ProductList.find((c) => c.name === selectedName);
-    if (found) setLifeWeeks(String(found.life_weeks));
-    else setLifeWeeks("");
-  };
-
   const handleBarcodeScan = (result: string) => {
     if (editingId) setEditBarcode(result);
     else setBarcode(result);
@@ -121,7 +101,7 @@ export default function Management() {
     setEditName(p.name);
     setEditBarcode(p.barcode || "");
     setEditCategory(p.category || "");
-    setEditExpireDate(p.expiration_date || "");
+    setEditLifeWeeks(p.week_lifetime ? String(p.week_lifetime) : "");
   };
 
   const saveEdit = async () => {
@@ -132,7 +112,7 @@ export default function Management() {
         name: editName.trim(),
         barcode: editBarcode.trim() || null,
         category: editCategory.trim() || null,
-        expiration_date: editExpireDate || null,
+        week_lifetime: editLifeWeeks ? parseInt(editLifeWeeks) : null,
       })
       .eq("id", editingId!);
     if (!error) {
@@ -197,40 +177,25 @@ export default function Management() {
               <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
                 Nom du produit
               </label>
-              <select
-                value={name}
-                onChange={handleSelectProduct}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk text-slate-800 appearance-none shadow-inner"
-                style={{
-                  backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
-                  backgroundRepeat: "no-repeat",
-                  backgroundPosition: "right 12px center",
-                  backgroundSize: "16px",
-                }}
-              >
-                <option value="">Sélectionner dans le grimoire...</option>
-                {ProductList.map((c) => (
-                  <option key={c.name} value={c.name}>{c.name}</option>
-                ))}
-              </select>
               <input
                 type="text"
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="ou saisir un nom libre..."
-                className="mt-2 w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
+                placeholder="ex. Saumon fumé, Ganache framboise..."
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
               />
             </div>
 
             <div className="mb-4">
               <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
-                Catégorie
+                Catégorie <span className="text-red-400">*</span>
               </label>
               <input
                 type="text"
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 placeholder="ex. Chocolat, Confiserie, Viennoiserie..."
+                required
                 className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
               />
             </div>
@@ -252,18 +217,6 @@ export default function Management() {
                   → Fin de semaine estimée : {endOfWeekDate(parseInt(lifeWeeks))}
                 </p>
               )}
-            </div>
-
-            <div className="mb-4">
-              <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
-                Date d'expiration fixe (optionnel)
-              </label>
-              <input
-                type="date"
-                value={expireDate}
-                onChange={(e) => setExpireDate(e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk shadow-inner text-slate-700"
-              />
             </div>
 
             <div className="mb-5">
@@ -293,7 +246,7 @@ export default function Management() {
 
             <button
               onClick={addProduct}
-              disabled={!name.trim()}
+              disabled={!name.trim() || !category.trim()}
               className="w-full bg-ink-800 text-foam-100 disabled:opacity-40 py-3 rounded-xl text-sm font-bold tracking-wide transition-all active:scale-95"
             >
               Enregistrer au catalogue
@@ -337,10 +290,12 @@ export default function Management() {
                             placeholder="Catégorie"
                           />
                           <input
-                            type="date"
-                            value={editExpireDate}
-                            onChange={(e) => setEditExpireDate(e.target.value)}
-                            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-teal-500 text-slate-700"
+                            type="number"
+                            value={editLifeWeeks}
+                            onChange={(e) => setEditLifeWeeks(e.target.value)}
+                            className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
+                            placeholder="Durée de conservation (semaines)"
+                            min={1}
                           />
                           <div className="flex gap-2">
                             <input
@@ -373,12 +328,7 @@ export default function Management() {
                             <div className="flex flex-wrap gap-x-3 mt-0.5">
                               {p.week_lifetime && (
                                 <p className="text-xs text-slate-400">
-                                  {p.week_lifetime} sem. · retrait à {p.week_lifetime - 2} sem.
-                                </p>
-                              )}
-                              {p.expiration_date && (
-                                <p className="text-xs text-amber-600 font-medium">
-                                  DLC : {formatDate(p.expiration_date)}
+                                  Conservation : {p.week_lifetime} sem.
                                 </p>
                               )}
                               {p.barcode && (
