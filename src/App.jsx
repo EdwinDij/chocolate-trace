@@ -1,20 +1,20 @@
 import "./App.css";
-import Navbar from "./components/navbar/Navbar";
 import Tracking from "./Pages/tracking/Tracking";
 import Dashboard from "./Pages/dashboard/Dashboard";
 import Management from "./Pages/management/Management";
 import Historic from "./Pages/historic/Historic";
 import Auth from "./Pages/auth/auth";
-import { Routes, Route, useLocation } from "react-router-dom";
+import { Routes, Route, Navigate  } from "react-router-dom";
 import AppLayout from "./layouts/AppLayout";
 import AuthLayout from "./layouts/AuthLayout";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Boutique from "./Pages/shopDashboard/shopDashboard";
-// import { computeBatchesDates } from "./utils/dates";
+import { useShop } from "./context/ShopContext";
+
 function App() {
   // console.log(computeBatchesDates("S21-2025", 5));
-  const location = useLocation();
-  const hideNav = location.pathname === "/auth";
+  const { shop } = useShop();
+
   return (
     <>
       <div className="App">
@@ -112,8 +112,15 @@ function App() {
               }
             /> */}
           </Route>
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <Navigate to={`/boutique/${shop?.id}`} replace />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
-        {!hideNav && <Navbar />}
       </div>
     </>
   );

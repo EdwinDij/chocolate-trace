@@ -9,6 +9,7 @@ import {
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { Batch } from "../../types/batch";
+import { useShop } from "../../context/ShopContext";
 
 const PAGE_SIZE = 20;
 
@@ -18,6 +19,7 @@ export default function Alertes() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+const { shop } = useShop();
 
   const { showToast } = useToast();
   useEffect(() => {
