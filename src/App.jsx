@@ -8,6 +8,7 @@ import Auth from "./Pages/auth/auth";
 import { Routes, Route, useLocation } from "react-router-dom";
 import AppLayout from "./layouts/AppLayout";
 import AuthLayout from "./layouts/AuthLayout";
+import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 // import { computeBatchesDates } from "./utils/dates";
 function App() {
   // console.log(computeBatchesDates("S21-2025", 5));
@@ -21,10 +22,38 @@ function App() {
             <Route path="/auth" element={<Auth />} />
           </Route>
           <Route element={<AppLayout />}>
-            <Route path="/" element={<Tracking />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/gestion" element={<Management />} />
-            <Route path="/historique" element={<Historic />} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute>
+                  <Tracking />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/gestion"
+              element={
+                <ProtectedRoute>
+                  <Management />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/historique"
+              element={
+                <ProtectedRoute>
+                  <Historic />
+                </ProtectedRoute>
+              }
+            />
           </Route>
         </Routes>
         {!hideNav && <Navbar />}
