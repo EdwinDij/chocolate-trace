@@ -1,9 +1,11 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation,useParams  } from "react-router-dom";
 import { useShop } from "../../context/ShopContext";
 
 export default function Navbar() {
   const location = useLocation();
-  const { member } = useShop();
+  const { id } = useParams();
+  const { shop, member } = useShop();
+    const shopId = id || shop?.id;
 
   const baseTabs = [
     {

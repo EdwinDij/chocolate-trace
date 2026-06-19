@@ -63,6 +63,54 @@ function App() {
                 </ProtectedRoute>
               }
             />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/boutique/:id"
+              element={
+                <ProtectedRoute>
+                  <Tracking />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/boutique/:id/catalogue"
+              element={
+                <ProtectedRoute>
+                  <Management />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/boutique/:id/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/boutique/:id/historique"
+              element={
+                <ProtectedRoute>
+                  <Historic />
+                </ProtectedRoute>
+              }
+            />
+            {/* <Route
+              path="/boutique/:id/equipe"
+              element={
+                <ProtectedRoute>
+                  <TeamPage />
+                </ProtectedRoute>
+              }
+            /> */}
           </Route>
         </Routes>
         {!hideNav && <Navbar />}

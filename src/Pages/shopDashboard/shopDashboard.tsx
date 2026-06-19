@@ -87,10 +87,10 @@ export default function Dashboard() {
     setAdding(false);
   };
 
-  const handleSwitch = (shopId: string) => {
-    switchShop(shopId);
-    navigate("/");
-  };
+ const handleSwitch = (shopId: string) => {
+  switchShop(shopId);
+  navigate(`/boutique/${shopId}`);
+};
 
   const handleSignOut = async () => {
     await signOut();
