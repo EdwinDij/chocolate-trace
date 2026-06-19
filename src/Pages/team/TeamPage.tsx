@@ -65,7 +65,7 @@ export default function TeamPage() {
     if (!error) {
       setMembers(
         (data || []).sort(
-          (a, b) => ROLE_ORDER[a.role] - ROLE_ORDER[b.role],
+          (a, b) => ROLE_ORDER[a.role as keyof typeof ROLE_ORDER] - ROLE_ORDER[b.role as keyof typeof ROLE_ORDER],
         ),
       );
     }
