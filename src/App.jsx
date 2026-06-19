@@ -9,6 +9,7 @@ import { Routes, Route, useLocation } from "react-router-dom";
 import AppLayout from "./layouts/AppLayout";
 import AuthLayout from "./layouts/AuthLayout";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
+import Boutique from "./Pages/shopDashboard/shopDashboard";
 // import { computeBatchesDates } from "./utils/dates";
 function App() {
   // console.log(computeBatchesDates("S21-2025", 5));
@@ -51,6 +52,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <Historic />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/boutique"
+              element={
+                <ProtectedRoute>
+                  <Boutique />
                 </ProtectedRoute>
               }
             />

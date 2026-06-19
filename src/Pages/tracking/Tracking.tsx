@@ -281,21 +281,21 @@ export default function Suivi() {
     fetchBatches(0);
   };
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
-      <header className="bg-[#3E2723] text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
+    <div className="min-h-screen bg-app pb-24 font-sans antialiased">
+      <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[#FFF8E1]">
+            <h1 className="text-xl font-black tracking-tight text-foam-100">
               Suivi des Lots
             </h1>
-            <p className="text-amber-200/60 text-xs mt-0.5 font-medium">
+            <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
               Semaine {getCurrentWeekLabel()} — Traçabilité & Fraîcheur
             </p>
           </div>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setShowBarcodeScanner(true)}
-              className="w-10 h-10 bg-amber-700 rounded-full flex items-center justify-center shadow-md border border-amber-600 hover:bg-amber-800 active:scale-95 transition-all duration-200"
+              className="w-10 h-10 bg-ink-800 rounded-full flex items-center justify-center shadow-md border border-teal-500 hover:bg-ink-800 active:scale-95 transition-all duration-200"
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -303,7 +303,7 @@ export default function Suivi() {
                 viewBox="0 0 24 24"
                 strokeWidth={2}
                 stroke="currentColor"
-                className="w-5 h-5 text-[#FFF8E1]"
+                className="w-5 h-5 text-foam-100"
               >
                 <path
                   strokeLinecap="round"
@@ -321,8 +321,8 @@ export default function Suivi() {
               onClick={() => setShowForm(!showForm)}
               className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg shadow-md border transition-all duration-200 active:scale-95 ${
                 showForm
-                  ? "bg-white text-stone-700 border-stone-200"
-                  : "bg-amber-700 text-[#FFF8E1] border-amber-600 hover:bg-amber-800"
+                  ? "bg-card text-stone-700 border-stone-200"
+                  : "bg-ink-800 text-foam-100 border-teal-500 hover:bg-ink-800"
               }`}
             >
               {showForm ? (
@@ -368,7 +368,7 @@ export default function Suivi() {
           viewBox="0 0 24 24"
           strokeWidth={2}
           stroke="currentColor"
-          className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-stone-400"
+          className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
         >
           <path
             strokeLinecap="round"
@@ -381,12 +381,12 @@ export default function Suivi() {
           value={search}
           onChange={(e) => setSearch(e.target.value)}
           placeholder="Rechercher par nom ou référence..."
-          className="w-full pl-9 pr-4 py-2.5 bg-white border border-amber-900/10 rounded-xl text-sm font-medium text-stone-800 placeholder-stone-400 focus:outline-none focus:border-amber-700 shadow-sm"
+          className="w-full pl-9 pr-4 py-2.5 bg-card border border-slate-200 rounded-xl text-sm font-medium text-slate-800 placeholder-stone-400 focus:outline-none focus:border-teal-500 shadow-sm"
         />
         {search && (
           <button
             onClick={() => setSearch("")}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+            className="absolute right-3.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-stone-600"
           >
             <svg
               xmlns="http://www.w3.org/2000/svg"
@@ -408,7 +408,7 @@ export default function Suivi() {
       <div className="px-4">
         {/* Formulaire ajout lot style Carte Premium */}
         {showForm && (
-          <div className="mt-4 bg-white rounded-2xl p-4 shadow-[0_4px_16px_-4px_rgba(62,39,35,0.08)] border border-amber-900/10 animate-fadeIn">
+          <div className="mt-4 bg-card rounded-2xl p-4 shadow-[0_4px_16px_-4px_rgba(62,39,35,0.08)] border border-slate-200 animate-fadeIn">
             <h2 className="font-bold mb-4 text-xs uppercase tracking-wider text-amber-900/60">
               Enregistrer un nouveau lot
             </h2>
@@ -420,7 +420,7 @@ export default function Suivi() {
               <select
                 value={typeId}
                 onChange={(e) => setTypeId(e.target.value)}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-700 bg-stone-50 text-stone-800 transition-all appearance-none shadow-inner"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk text-slate-800 transition-all appearance-none shadow-inner"
                 style={{
                   backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
                   backgroundRepeat: "no-repeat",
@@ -446,7 +446,7 @@ export default function Suivi() {
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 placeholder="ex. BOX-2026-042"
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-700 bg-stone-50 placeholder-stone-400 shadow-inner"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
               />
             </div>
 
@@ -459,7 +459,7 @@ export default function Suivi() {
                   type="text"
                   value={weekReceiving}
                   onChange={(e) => setWeekReceiving(e.target.value)}
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-amber-700 bg-stone-50 shadow-inner"
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-semibold focus:outline-none focus:border-teal-500 bg-sunk shadow-inner"
                 />
               </div>
               <div>
@@ -471,7 +471,7 @@ export default function Suivi() {
                   value={quantity}
                   onChange={(e) => setQuantity(e.target.value)}
                   placeholder="ex. 5"
-                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-700 bg-stone-50 placeholder-stone-400 shadow-inner"
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
                 />
               </div>
             </div>
@@ -479,7 +479,7 @@ export default function Suivi() {
             <button
               onClick={addBatch}
               disabled={!typeId || !reference.trim() || !quantity}
-              className="w-full bg-amber-700 text-[#FFF8E1] hover:bg-amber-800 disabled:opacity-40 disabled:hover:bg-amber-700 py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-150 shadow-sm active:scale-95"
+              className="w-full bg-ink-800 text-foam-100 hover:bg-ink-800 disabled:opacity-40 disabled:hover:bg-ink-800 py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-150 shadow-sm active:scale-95"
             >
               Ajouter au stock
             </button>
@@ -495,8 +495,8 @@ export default function Suivi() {
               className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all duration-200 tracking-wide border
                 ${
                   filter === f
-                    ? "bg-amber-800 text-[#FFF8E1] border-amber-900/20 shadow-sm"
-                    : "bg-white text-stone-500 border-stone-200/80 hover:text-stone-700 hover:bg-stone-50"
+                    ? "bg-ink-800 text-foam-100 border-amber-900/20 shadow-sm"
+                    : "bg-card text-slate-500 border-stone-200/80 hover:text-stone-700 hover:bg-sunk"
                 }`}
             >
               {f}
@@ -517,8 +517,8 @@ export default function Suivi() {
                 className={`shrink-0 px-3 py-1 rounded-full text-xs font-semibold transition-all duration-200 border
           ${
             typeFilter === t
-              ? "bg-[#3E2723] text-[#FFF8E1] border-[#3E2723]"
-              : "bg-white text-stone-400 border-stone-200/80 hover:text-stone-600"
+              ? "bg-ink-800 text-foam-100 border-[#3E2723]"
+              : "bg-card text-slate-400 border-stone-200/80 hover:text-stone-600"
           }`}
               >
                 {t ?? "Tous"}
@@ -537,7 +537,7 @@ export default function Suivi() {
               </p>
             </div>
           ) : filteredBatches.length === 0 ? (
-            <p className="text-center text-amber-900/40 text-sm py-8 bg-white rounded-2xl border border-amber-900/10 shadow-sm font-medium">
+            <p className="text-center text-amber-900/40 text-sm py-8 bg-card rounded-2xl border border-slate-200 shadow-sm font-medium">
               Aucun lot trouvé dans cette catégorie.
             </p>
           ) : (
@@ -547,7 +547,7 @@ export default function Suivi() {
               return (
                 <div
                   key={batch.id}
-                  className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_-3px_rgba(62,39,35,0.04)] border border-amber-900/10 hover:border-amber-700/20 transition-all"
+                  className="bg-card rounded-2xl p-4 shadow-[0_2px_8px_-3px_rgba(62,39,35,0.04)] border border-slate-200 hover:border-amber-700/20 transition-all"
                 >
                   {/* Titre et badge de statut */}
                   <div className="flex items-start justify-between gap-3">
@@ -555,13 +555,13 @@ export default function Suivi() {
                       <p className="font-bold text-[#3E2723] text-[15px] tracking-tight leading-tight">
                         {batch.products.name}
                       </p>
-                      <p className="text-xs text-stone-400 mt-1 font-medium">
+                      <p className="text-xs text-slate-400 mt-1 font-medium">
                         Réf :{" "}
                         <span className="font-semibold text-stone-600">
                           {batch.reference}
                         </span>{" "}
                         ·{" "}
-                        <span className="text-amber-800 font-semibold">
+                        <span className="text-teal-700 font-semibold">
                           {batch.quantity} boîte{batch.quantity > 1 ? "s" : ""}
                         </span>
                       </p>
@@ -574,7 +574,7 @@ export default function Suivi() {
                   </div>
 
                   {/* Ligne des dates de traçabilité */}
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-stone-100 text-xs text-stone-500 font-medium">
+                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 mt-3 pt-3 border-t border-stone-100 text-xs text-slate-500 font-medium">
                     <span className="flex items-center gap-1">
                       <span className="text-stone-300">📦</span> Recu{" "}
                       <strong className="text-stone-700">
@@ -606,7 +606,7 @@ export default function Suivi() {
                           {batch.status === BatchStatus.STOCK && (
                             <button
                               onClick={(e) => openBatch(batch.id, e)}
-                              className="flex-1 bg-amber-50 text-amber-800 border border-amber-200/60 hover:bg-amber-100/70 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                              className="flex-1 bg-teal-50 text-teal-700 border border-amber-200/60 hover:bg-amber-100/70 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
                             >
                               <svg
                                 xmlns="http://www.w3.org/2000/svg"
@@ -677,7 +677,7 @@ export default function Suivi() {
                             onClick={(e) =>
                               updateStatus(batch.id, BatchStatus.EPUISE, e)
                             }
-                            className="flex-1 bg-stone-50 text-stone-600 border border-stone-200/80 hover:bg-stone-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                            className="flex-1 bg-sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
                           >
                             <svg
                               xmlns="http://www.w3.org/2000/svg"
@@ -742,7 +742,7 @@ export default function Suivi() {
           <button
             onClick={() => fetchBatches(page + 1)}
             disabled={loadingMore}
-            className="w-full mt-3 py-3 rounded-xl text-xs font-bold text-amber-800 bg-white border border-amber-900/10 hover:bg-amber-50 transition-all disabled:opacity-50"
+            className="w-full mt-3 py-3 rounded-xl text-xs font-bold text-teal-700 bg-card border border-slate-200 hover:bg-teal-50 transition-all disabled:opacity-50"
           >
             {loadingMore ? "Chargement..." : "Charger plus"}
           </button>

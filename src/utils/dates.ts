@@ -11,7 +11,7 @@ export function getISOWeek(date: Date = new Date()): number {
       ((d.getTime() - week1.getTime()) / 86400000 -
         3 +
         ((week1.getDay() + 6) % 7)) /
-        7,
+      7,
     )
   );
 }
@@ -116,7 +116,7 @@ export function getStatusStyle(status: string): StatusStyle {
     case "ouvert":
       return { bg: "bg-amber-100", text: "text-amber-700", label: "Ouvert" };
     case "stock":
-      return { bg: "bg-stone-100", text: "text-stone-500", label: "En stock" };
+      return { bg: "bg-stone-100", text: "text-slate-500", label: "En stock" };
     case "perime":
       return { bg: "bg-red-100", text: "text-red-400", label: "Périmé" };
     case "non_conforme":
@@ -126,6 +126,6 @@ export function getStatusStyle(status: string): StatusStyle {
         label: "Non conforme",
       };
     default:
-      return { bg: "bg-stone-100", text: "text-stone-500", label: "—" };
+      return { bg: "bg-stone-100", text: "text-slate-500", label: "—" };
   }
 }

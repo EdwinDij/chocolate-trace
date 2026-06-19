@@ -29,7 +29,7 @@ const STATUS_STYLE: Record<
   },
   [BatchStatus.EPUISE]: {
     bg: "bg-stone-100",
-    text: "text-stone-500",
+    text: "text-slate-500",
     label: "Épuisé",
   },
 };
@@ -106,26 +106,26 @@ export default function Historic() {
   }, [entries]);
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
-      <header className="bg-[#3E2723] text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
+    <div className="min-h-screen bg-app pb-24 font-sans antialiased">
+      <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div>
-          <h1 className="text-xl font-black tracking-tight text-[#FFF8E1]">
+          <h1 className="text-xl font-black tracking-tight text-foam-100">
             Historique
           </h1>
-          <p className="text-amber-200/60 text-xs mt-0.5 font-medium">
+          <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
             Traçabilité complète des lots retirés
           </p>
         </div>
       </header>
 
       <div className="px-4 mt-5 grid grid-cols-3 gap-3">
-        <div className="bg-white border border-red-100 rounded-2xl p-3 text-center">
+        <div className="bg-card border border-red-100 rounded-2xl p-3 text-center">
           <p className="text-2xl font-black text-red-600">{counts.perime}</p>
           <p className="text-[10px] text-red-400 font-bold uppercase mt-0.5">
             Périmés
           </p>
         </div>
-        <div className="bg-white border border-purple-100 rounded-2xl p-3 text-center">
+        <div className="bg-card border border-purple-100 rounded-2xl p-3 text-center">
           <p className="text-2xl font-black text-purple-600">
             {counts.non_conforme}
           </p>
@@ -133,9 +133,9 @@ export default function Historic() {
             Non conformes
           </p>
         </div>
-        <div className="bg-white border border-stone-200 rounded-2xl p-3 text-center">
-          <p className="text-2xl font-black text-stone-500">{counts.epuise}</p>
-          <p className="text-[10px] text-stone-400 font-bold uppercase mt-0.5">
+        <div className="bg-card border border-stone-200 rounded-2xl p-3 text-center">
+          <p className="text-2xl font-black text-slate-500">{counts.epuise}</p>
+          <p className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">
             Épuisés
           </p>
         </div>
@@ -156,8 +156,8 @@ export default function Historic() {
             className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border
               ${
                 filter === f
-                  ? "bg-amber-800 text-[#FFF8E1] border-amber-900/20"
-                  : "bg-white text-stone-500 border-stone-200"
+                  ? "bg-ink-800 text-foam-100 border-amber-900/20"
+                  : "bg-card text-slate-500 border-stone-200"
               }`}
           >
             {f === "tous"
@@ -177,13 +177,13 @@ export default function Historic() {
           {/* Header dropdown */}
           <button
             onClick={() => toggleGroup(date)}
-            className="w-full flex items-center justify-between px-4 py-3 bg-white rounded-2xl border border-amber-900/10 shadow-sm"
+            className="w-full flex items-center justify-between px-4 py-3 bg-card rounded-2xl border border-slate-200 shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-amber-900/60 uppercase tracking-wider">
+              <span className="text-xs font-bold text-slate-400uppercase tracking-wider">
                 {date}
               </span>
-              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 px-2 py-0.5 rounded-full">
+              <span className="text-[10px] font-bold bg-amber-100 text-teal-700 px-2 py-0.5 rounded-full">
                 {entries.length} lot{entries.length > 1 ? "s" : ""}
               </span>
             </div>
@@ -193,7 +193,7 @@ export default function Historic() {
               viewBox="0 0 24 24"
               strokeWidth={2.5}
               stroke="currentColor"
-              className={`w-4 h-4 text-stone-400 transition-transform duration-200 ${
+              className={`w-4 h-4 text-slate-400 transition-transform duration-200 ${
                 openGroups[date] ? "rotate-180" : ""
               }`}
             >
@@ -213,14 +213,14 @@ export default function Historic() {
                 return (
                   <div
                     key={entry.id}
-                    className="bg-white rounded-2xl p-4 border border-amber-900/10 shadow-sm"
+                    className="bg-card rounded-2xl p-4 border border-slate-200 shadow-sm"
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
                         <p className="font-bold text-[#3E2723] text-sm truncate">
                           {entry.type_name}
                         </p>
-                        <p className="text-xs text-stone-400 mt-0.5">
+                        <p className="text-xs text-slate-400 mt-0.5">
                           Réf :{" "}
                           <span className="font-semibold text-stone-600">
                             {entry.reference}

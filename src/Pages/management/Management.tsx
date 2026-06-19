@@ -115,19 +115,19 @@ export default function Management() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
+    <div className="min-h-screen bg-app pb-24 font-sans antialiased">
       {/* Header en Cohérence avec Alertes */}
-      <header className="bg-[#3E2723] text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
+      <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[#FFF8E1]">
+            <h1 className="text-xl font-black tracking-tight text-foam-100">
               Catalogue
             </h1>
-            <p className="text-amber-200/60 text-xs mt-0.5 font-medium">
+            <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
               Gestion des recettes & durées de conservation
             </p>
           </div>
-          <span className="text-[10px] bg-amber-700 text-[#FFF8E1] border border-amber-600 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+          <span className="text-[10px] bg-ink-800 text-foam-100 border border-teal-500 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
             {chocolate.length} Référence{chocolate.length > 1 ? "s" : ""}
           </span>
         </div>
@@ -139,8 +139,8 @@ export default function Management() {
           onClick={() => setShowForm(!showForm)}
           className={`w-full py-3 rounded-2xl font-bold text-sm tracking-wide transition-all duration-200 shadow-sm border flex items-center justify-center gap-2 active:scale-[0.98] ${
             showForm
-              ? "bg-white text-stone-600 border-stone-200 hover:bg-stone-50"
-              : "bg-amber-800 text-[#FFF8E1] border-amber-900/20 hover:bg-amber-900"
+              ? "bg-card text-stone-600 border-stone-200 hover:bg-sunk"
+              : "bg-ink-800 text-foam-100 border-amber-900/20 hover:bg-amber-900"
           }`}
         >
           {showForm ? (
@@ -184,7 +184,7 @@ export default function Management() {
 
         {/* Formulaire d'ajout style Carte Premium */}
         {showForm && (
-          <div className="bg-white rounded-2xl p-4 mt-4 shadow-[0_4px_16px_-4px_rgba(62,39,35,0.08)] border border-amber-900/10 animate-fadeIn">
+          <div className="bg-card rounded-2xl p-4 mt-4 shadow-[0_4px_16px_-4px_rgba(62,39,35,0.08)] border border-slate-200 animate-fadeIn">
             <div className="mb-4">
               <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1.5 block">
                 Nom du produit d'artisanat
@@ -192,7 +192,7 @@ export default function Management() {
               <select
                 value={name}
                 onChange={handleSelectChocolate}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-amber-700 bg-stone-50 text-stone-800 transition-all appearance-none shadow-inner"
+                className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk text-slate-800 transition-all appearance-none shadow-inner"
                 style={{
                   backgroundImage: `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24' fill='none' stroke='%2378716c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><polyline points='6 9 12 15 18 9'></polyline></svg>")`,
                   backgroundRepeat: "no-repeat",
@@ -219,12 +219,12 @@ export default function Management() {
                   value={lifeWeeks ? `${lifeWeeks} semaines` : ""}
                   readOnly
                   placeholder="Sélection automatique"
-                  className="w-full border border-stone-200/60 rounded-xl px-3 py-2.5 text-sm bg-stone-100/80 font-semibold text-stone-500 shadow-inner"
+                  className="w-full border border-stone-200/60 rounded-xl px-3 py-2.5 text-sm bg-stone-100/80 font-semibold text-slate-500 shadow-inner"
                 />
               </div>
             </div>
             <div className="mb-4">
-              <label className="text-sm text-stone-500 mb-1 block">
+              <label className="text-sm text-slate-500 mb-1 block">
                 Code-barres (optionnel)
               </label>
               <div className="flex gap-2">
@@ -233,11 +233,11 @@ export default function Management() {
                   value={barcode}
                   onChange={(e) => setBarcode(e.target.value)}
                   placeholder="ex. 2800118009449"
-                  className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-600"
+                  className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
                 />
                 <button
                   onClick={() => setShowBarcodeScanner(true)}
-                  className="bg-amber-800 text-white px-3 rounded-lg text-lg"
+                  className="bg-ink-800 text-white px-3 rounded-lg text-lg"
                 >
                   📷
                 </button>
@@ -253,7 +253,7 @@ export default function Management() {
             <button
               onClick={addType}
               disabled={!name}
-              className="w-full bg-amber-700 text-[#FFF8E1] hover:bg-amber-800 disabled:opacity-40 disabled:hover:bg-amber-700 py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-150 shadow-sm active:scale-95"
+              className="w-full bg-ink-800 text-foam-100 hover:bg-ink-800 disabled:opacity-40 disabled:hover:bg-ink-800 py-3 rounded-xl text-sm font-bold tracking-wide transition-all duration-150 shadow-sm active:scale-95"
             >
               Enregistrer au catalogue
             </button>
@@ -274,7 +274,7 @@ export default function Management() {
               </p>
             </div>
           ) : chocolate.length === 0 ? (
-            <p className="text-center text-amber-900/40 text-sm py-8 bg-white rounded-2xl border border-amber-900/10 shadow-sm font-medium">
+            <p className="text-center text-amber-900/40 text-sm py-8 bg-card rounded-2xl border border-slate-200 shadow-sm font-medium">
               Le catalogue est vide pour le moment.
             </p>
           ) : (
@@ -282,7 +282,7 @@ export default function Management() {
               {chocolate.map((choco) => (
                 <li
                   key={choco.id}
-                  className="bg-white rounded-xl px-4 py-3 shadow-sm border border-stone-200"
+                  className="bg-card rounded-xl px-4 py-3 shadow-sm border border-stone-200"
                 >
                   {editingId === choco.id ? (
                     // Mode édition
@@ -291,7 +291,7 @@ export default function Management() {
                         type="text"
                         value={editName}
                         onChange={(e) => setEditName(e.target.value)}
-                        className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-600"
+                        className="w-full border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
                         placeholder="Nom"
                       />
                       <div className="flex gap-2">
@@ -299,12 +299,12 @@ export default function Management() {
                           type="text"
                           value={editBarcode}
                           onChange={(e) => setEditBarcode(e.target.value)}
-                          className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-amber-600"
+                          className="flex-1 border border-stone-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-teal-500"
                           placeholder="Code-barres"
                         />
                         <button
                           onClick={() => setShowBarcodeScanner(true)}
-                          className="bg-amber-800 text-white px-3 rounded-lg text-lg"
+                          className="bg-ink-800 text-white px-3 rounded-lg text-lg"
                         >
                           📷
                         </button>
@@ -312,13 +312,13 @@ export default function Management() {
                       <div className="flex gap-2 mt-1">
                         <button
                           onClick={saveEdit}
-                          className="flex-1 bg-amber-800 text-white py-2 rounded-lg text-sm font-medium"
+                          className="flex-1 bg-ink-800 text-white py-2 rounded-lg text-sm font-medium"
                         >
                           ✓ Sauvegarder
                         </button>
                         <button
                           onClick={() => setEditingId(null)}
-                          className="flex-1 bg-stone-100 text-stone-500 py-2 rounded-lg text-sm font-medium"
+                          className="flex-1 bg-stone-100 text-slate-500 py-2 rounded-lg text-sm font-medium"
                         >
                           Annuler
                         </button>
@@ -328,10 +328,10 @@ export default function Management() {
                     // Mode affichage
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-stone-800">
+                        <p className="font-medium text-slate-800">
                           {choco.name}
                         </p>
-                        <p className="text-xs text-stone-400 mt-0.5">
+                        <p className="text-xs text-slate-400 mt-0.5">
                           {choco.week_lifetime} sem. · retrait à{" "}
                           {choco.week_lifetime - 2} sem.
                           {choco.barcode && <span> · 📷 {choco.barcode}</span>}
@@ -340,7 +340,7 @@ export default function Management() {
                       <div className="flex items-center gap-2">
                         <button
                           onClick={() => startEdit(choco)}
-                          className="text-amber-600 hover:text-amber-800 text-lg px-1"
+                          className="text-amber-600 hover:text-teal-700 text-lg px-1"
                           title="Modifier"
                         >
                           ✏️

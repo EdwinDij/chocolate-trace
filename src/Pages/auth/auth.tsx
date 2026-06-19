@@ -72,7 +72,7 @@ export default function Auth() {
     }
 
     const userId = data.user.id;
-    console.log(data.user,"data user")
+    console.log(data.user, "data user");
     //créer la boutique
     const { data: shopData, error: shopError } = await supabase
       .from("shops")
@@ -133,7 +133,7 @@ export default function Auth() {
         </p>
       </div>
 
-      <div className="flex-1 bg-white rounded-t-3xl px-4 pt-8 pb-10">
+      <div className="flex-1 bg-card rounded-t-3xl px-4 pt-8 pb-10">
         <div className="flex bg-slate-100 rounded-xl p-1 mb-8">
           {(["connexion", "inscription"] as Tab[]).map((t) => (
             <button
@@ -143,7 +143,7 @@ export default function Auth() {
                 setError(null);
               }}
               className={`flex-1 py-2.5 rounded-[10px] text-sm font-bold transition-all ${
-                tab === t ? "bg-white text-ink-900 shadow-sm" : "text-slate-400"
+                tab === t ? "bg-card text-ink-900 shadow-sm" : "text-slate-400"
               }`}
             >
               {t === "connexion" ? "Connexion" : "Inscription"}
