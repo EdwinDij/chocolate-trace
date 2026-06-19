@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "../../utils/supabase";
 import { BatchStatus } from "../../types/batch";
+import { useShop } from "../../context/ShopContext";
 
 interface HistoricEntry {
   id: string;
@@ -16,13 +17,21 @@ const STATUS_STYLE: Record<
   string,
   { bg: string; text: string; label: string }
 > = {
-  [BatchStatus.PERIME]: { bg: "bg-red-100", text: "text-red-600", label: "Périmé" },
+  [BatchStatus.PERIME]: {
+    bg: "bg-red-100",
+    text: "text-red-600",
+    label: "Périmé",
+  },
   [BatchStatus.NON_CONFORME]: {
     bg: "bg-purple-100",
     text: "text-purple-600",
     label: "Non conforme",
   },
-  [BatchStatus.EPUISE]: { bg: "bg-stone-100", text: "text-stone-500", label: "Épuisé" },
+  [BatchStatus.EPUISE]: {
+    bg: "bg-stone-100",
+    text: "text-stone-500",
+    label: "Épuisé",
+  },
 };
 
 export default function Historic() {
@@ -33,30 +42,36 @@ export default function Historic() {
   >("tous");
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const { shop } = useShop();
 
   const toggleGroup = (date: string) => {
     setOpenGroups((prev) => ({ ...prev, [date]: !prev[date] }));
   };
+
   const fetchHistoric = async () => {
+    if (!shop) return;
     const { data, error } = await supabase
       .from("historic")
       .select("*")
+      .eq("shop_id", shop.id)
       .order("created_at", { ascending: false });
     if (!error) setEntries(data || []);
     setLoading(false);
   };
+
   console.log("Historic entries", entries);
   useEffect(() => {
+    if (!shop) return;
     fetchHistoric();
-  }, []);
-
+  }, [shop]);
   const filtered = entries.filter(
     (e) => filter === "tous" || e.status === filter,
   );
 
   const counts = {
     perime: entries.filter((e) => e.status === BatchStatus.PERIME).length,
-    non_conforme: entries.filter((e) => e.status === BatchStatus.NON_CONFORME).length,
+    non_conforme: entries.filter((e) => e.status === BatchStatus.NON_CONFORME)
+      .length,
     epuise: entries.filter((e) => e.status === BatchStatus.EPUISE).length,
   };
 
@@ -127,11 +142,18 @@ export default function Historic() {
       </div>
 
       <div className="px-6 mt-4 flex gap-2 overflow-x-auto pb-2 scrollbar-hide -mx-4 justify-center">
-        {(["tous", BatchStatus.PERIME, BatchStatus.NON_CONFORME, BatchStatus.EPUISE] as const).map((f) => (
+        {(
+          [
+            "tous",
+            BatchStatus.PERIME,
+            BatchStatus.NON_CONFORME,
+            BatchStatus.EPUISE,
+          ] as const
+        ).map((f) => (
           <button
             key={f}
             onClick={() => setFilter(f)}
-            className={`flex-shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border
+            className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-bold transition-all border
               ${
                 filter === f
                   ? "bg-amber-800 text-[#FFF8E1] border-amber-900/20"
@@ -210,7 +232,7 @@ export default function Historic() {
                         </p>
                       </div>
                       <span
-                        className={`flex-shrink-0 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${style.bg} ${style.text}`}
+                        className={`shrink-0 text-[10px] font-bold uppercase px-2.5 py-1 rounded-full ${style.bg} ${style.text}`}
                       >
                         {style.label}
                       </span>

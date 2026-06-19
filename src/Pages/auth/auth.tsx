@@ -72,7 +72,7 @@ export default function Auth() {
     }
 
     const userId = data.user.id;
-
+    console.log(data.user,"data user")
     //créer la boutique
     const { data: shopData, error: shopError } = await supabase
       .from("shops")

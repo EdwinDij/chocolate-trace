@@ -3,11 +3,11 @@ import { supabase } from "../../utils/supabase";
 import { chocolateList } from "../../utils/chocolateList";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
-import { ChocolateType } from "../../types/chocolateType";
+import { Product } from "../../types/productType";
 import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
 
 export default function Management() {
-  const [chocolate, setChocolate] = useState<ChocolateType[]>([]);
+  const [chocolate, setChocolate] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [name, setName] = useState("");
@@ -22,12 +22,12 @@ export default function Management() {
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
-    fetchChocolateTypes();
+    fetchProduct();
   }, []);
 
-  const fetchChocolateTypes = async () => {
+  const fetchProduct = async () => {
     const { data, error } = await supabase
-      .from("chocolate_type")
+      .from("product")
       .select("*")
       .order("name");
     if (!error) setChocolate(data || []);
@@ -54,7 +54,7 @@ export default function Management() {
     setLifeWeeks("");
     setShowForm(false);
     setBarcode("");
-    fetchChocolateTypes();
+    fetchProduct();
     showToast("Type ajouté avec succès !");
   };
 
@@ -65,7 +65,7 @@ export default function Management() {
       .delete()
       .eq("id", id);
     if (!error) {
-      fetchChocolateTypes();
+      fetchProduct();
       showToast("Chocolat supprimé avec succès !");
     } else {
       showToast(
@@ -92,7 +92,7 @@ export default function Management() {
     showToast("Code-barres scanné !");
   };
 
-  const startEdit = (type: ChocolateType) => {
+  const startEdit = (type: Product) => {
     setEditingId(type.id);
     setEditName(type.name);
     setEditBarcode(type.barcode || "");
@@ -110,7 +110,7 @@ export default function Management() {
     if (!error) {
       showToast("Chocolat mis à jour !");
       setEditingId(null);
-      fetchChocolateTypes();
+      fetchProduct();
     }
   };
 

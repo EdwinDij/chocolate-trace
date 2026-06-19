@@ -31,12 +31,14 @@ export default function Alertes() {
     const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("batches")
-      .select("*, chocolate_type!type_id(name, week_lifetime)")
+      .select("*, products!type_id(name, week_lifetime)")
       .in("status", ["stock", "ouvert"])
       .order("created_at", { ascending: true })
       .range(from, to);
     if (!error) {
-      setBatches((prev) => (pageIndex === 0 ? data || [] : [...prev, ...(data || [])]));
+      setBatches((prev) =>
+        pageIndex === 0 ? data || [] : [...prev, ...(data || [])],
+      );
       setHasMore((data?.length ?? 0) === PAGE_SIZE);
       setPage(pageIndex);
     }
@@ -49,23 +51,32 @@ export default function Alertes() {
     () =>
       batches.map((b) => ({
         batch: b,
-        dates: computeBatchesDates(b.week_receiving, b.chocolate_type.week_lifetime),
+        dates: computeBatchesDates(b.week_receiving, b.products.week_lifetime),
       })),
     [batches],
   );
 
   const expired = useMemo(
-    () => batchesWithDates.filter(({ dates }) => dates?.status === "expired").map(({ batch }) => batch),
+    () =>
+      batchesWithDates
+        .filter(({ dates }) => dates?.status === "expired")
+        .map(({ batch }) => batch),
     [batchesWithDates],
   );
 
   const warning = useMemo(
-    () => batchesWithDates.filter(({ dates }) => dates?.status === "warning").map(({ batch }) => batch),
+    () =>
+      batchesWithDates
+        .filter(({ dates }) => dates?.status === "warning")
+        .map(({ batch }) => batch),
     [batchesWithDates],
   );
 
   const ok = useMemo(
-    () => batchesWithDates.filter(({ dates }) => dates?.status === "ok").map(({ batch }) => batch),
+    () =>
+      batchesWithDates
+        .filter(({ dates }) => dates?.status === "ok")
+        .map(({ batch }) => batch),
     [batchesWithDates],
   );
 
@@ -73,7 +84,7 @@ export default function Alertes() {
     const { error } = await supabase.from("batches").delete().eq("id", id);
     if (!error) {
       showToast("Lot supprimé avec succès.", "success");
-      fetchBatches();
+      fetchBatches(0);
     }
   };
   // Composant de carte purement informatif (Style mini-badge)
@@ -88,7 +99,7 @@ export default function Alertes() {
   }) => {
     const dates = computeBatchesDates(
       batch.week_receiving,
-      batch.chocolate_type.week_lifetime,
+      batch.products.week_lifetime,
     );
     if (!dates) return null;
 
@@ -96,14 +107,14 @@ export default function Alertes() {
       <div
         className={`bg-white rounded-2xl p-4 shadow-[0_2px_8px_-3px_rgba(62,39,35,0.04)] border transition-all ${
           isCritical
-            ? "border-red-200 bg-gradient-to-r from-red-50/30 to-white"
+            ? "border-red-200 bg-linear-to-r from-red-50/30 to-white"
             : "border-amber-900/10"
         }`}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="font-bold text-[#3E2723] text-sm truncate">
-              {batch.chocolate_type.name}
+              {batch.products.name}
             </h3>
             <p className="text-[11px] font-medium text-stone-400 mt-0.5">
               RÉF: {batch.reference} ·{" "}
@@ -113,9 +124,8 @@ export default function Alertes() {
             </p>
           </div>
 
-
           <span
-            className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${isCritical ? "bg-red-500 animate-pulse" : "bg-amber-500"}`}
+            className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${isCritical ? "bg-red-500 animate-pulse" : "bg-amber-500"}`}
           />
         </div>
 
@@ -166,7 +176,7 @@ export default function Alertes() {
 
       {/* Les KPI (Indicateurs clés de performance) */}
       <div className="px-4 mt-5 grid grid-cols-3 gap-3">
-        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-[85px]">
+        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-21.25">
           <p className="text-[10px] uppercase font-bold text-red-500/80 tracking-wider">
             À retirer
           </p>
@@ -174,7 +184,7 @@ export default function Alertes() {
             {expired.length}
           </p>
         </div>
-        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-[85px]">
+        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-21.25">
           <p className="text-[10px] uppercase font-bold text-amber-600 tracking-wider">
             À surveiller
           </p>
@@ -182,7 +192,7 @@ export default function Alertes() {
             {warning.length}
           </p>
         </div>
-        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-[85px]">
+        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-21.25">
           <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
             En sécurité
           </p>
