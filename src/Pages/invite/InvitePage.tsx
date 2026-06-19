@@ -97,8 +97,17 @@ export default function InvitePage() {
       .update({ used_at: new Date().toISOString() })
       .eq("id", invitation.id);
 
-    setStatus("success");
-    setTimeout(() => navigate("/auth"), 2500);
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError) {
+      setStatus("success");
+      setTimeout(() => navigate("/auth"), 2500);
+    } else {
+      navigate(`/boutique/${invitation.shop_id}`);
+    }
   };
 
   if (status === "loading") {
