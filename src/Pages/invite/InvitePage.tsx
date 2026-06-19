@@ -18,6 +18,7 @@ export default function InvitePage() {
   const [invitation, setInvitation] = useState<Invitation | null>(null);
   const [status, setStatus] = useState<"loading" | "valid" | "invalid" | "success">("loading");
   const [firstName, setFirstName] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,14 +59,12 @@ export default function InvitePage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firstName.trim() || password.length < 8 || !invitation) return;
+    if (!firstName.trim() || !email.trim() || password.length < 8 || !invitation) return;
     setSubmitting(true);
     setError(null);
 
-    const email = `${token}@traceo.app`;
-
     const { data: authData, error: signUpError } = await supabase.auth.signUp({
-      email,
+      email: email.trim(),
       password,
       options: {
         data: { display_name: firstName.trim() },
@@ -73,15 +72,13 @@ export default function InvitePage() {
     });
 
     if (signUpError || !authData.user) {
-      setError("Erreur lors de la création du compte.");
+      setError(signUpError?.message ?? "Erreur lors de la création du compte.");
       setSubmitting(false);
       return;
     }
 
-    const userId = authData.user.id;
-
     const { error: memberError } = await supabase.from("shop_member").insert({
-      user_id: userId,
+      user_id: authData.user.id,
       shop_id: invitation.shop_id,
       role: invitation.role ?? "employe",
     });
@@ -97,17 +94,8 @@ export default function InvitePage() {
       .update({ used_at: new Date().toISOString() })
       .eq("id", invitation.id);
 
-    const { error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (signInError) {
-      setStatus("success");
-      setTimeout(() => navigate("/auth"), 2500);
-    } else {
-      navigate(`/boutique/${invitation.shop_id}`);
-    }
+    setStatus("success");
+    setTimeout(() => navigate("/auth"), 2500);
   };
 
   if (status === "loading") {
@@ -189,6 +177,20 @@ export default function InvitePage() {
 
           <div>
             <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="ex. marie@example.com"
+              className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm font-medium focus:outline-none focus:border-teal-500 bg-sunk placeholder-stone-400 shadow-inner"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="text-[11px] uppercase font-bold text-amber-900/50 tracking-wider mb-1 block">
               Mot de passe
             </label>
             <input
@@ -211,7 +213,7 @@ export default function InvitePage() {
           <button
             type="submit"
             disabled={
-              submitting || !firstName.trim() || password.length < 8
+              submitting || !firstName.trim() || !email.trim() || password.length < 8
             }
             className="w-full bg-ink-800 text-foam-100 py-3 rounded-xl text-sm font-bold tracking-wide active:scale-95 transition-all disabled:opacity-40 mt-1"
           >
