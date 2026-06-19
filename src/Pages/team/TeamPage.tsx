@@ -62,12 +62,23 @@ export default function TeamPage() {
       .from("shop_member")
       .select("id, user_id, role, display_name")
       .eq("shop_id", shopId);
-    if (!error) {
-      setMembers(
-        (data || []).sort(
-          (a, b) => ROLE_ORDER[a.role as keyof typeof ROLE_ORDER] - ROLE_ORDER[b.role as keyof typeof ROLE_ORDER],
-        ),
+
+    const sort = (list: Member[]) =>
+      list.sort(
+        (a, b) =>
+          ROLE_ORDER[a.role as keyof typeof ROLE_ORDER] -
+          ROLE_ORDER[b.role as keyof typeof ROLE_ORDER],
       );
+
+    if (!error) {
+      setMembers(sort(data || []));
+    } else {
+      // fallback si la colonne display_name n'existe pas encore
+      const { data: fallback } = await supabase
+        .from("shop_member")
+        .select("id, user_id, role")
+        .eq("shop_id", shopId);
+      setMembers(sort((fallback || []) as Member[]));
     }
     setLoading(false);
   };
