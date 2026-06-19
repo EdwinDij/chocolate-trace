@@ -63,31 +63,42 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const loadShops = async (userId: string) => {
-    // Récupère toutes les boutiques du gérant (owner)
-    const { data: ownedShops } = await supabase
-      .from("shops")
-      .select("*")
-      .eq("owner_id", userId);
+    try {
+      const { data: ownedShops } = await supabase
+        .from("shops")
+        .select("*")
+        .eq("owner_id", userId);
 
-    // Récupère les boutiques où il est membre (responsable/employé)
-    const { data: memberShops } = await supabase
-      .from("shop_member")
-      .select("shop_id, role, shops(*)")
-      .eq("user_id", userId);
+      const { data: memberData } = await supabase
+        .from("shop_member")
+        .select("shop_id, role")
+        .eq("user_id", userId);
 
-    const allShops: Shop[] = [
-      ...(ownedShops || []),
-      ...(memberShops?.map((m) => m.shops as unknown as Shop) || []),
-    ];
+      const memberShopIds = memberData?.map((m) => m.shop_id) || [];
 
-    setShops(allShops);
+      let memberShops: Shop[] = [];
+      if (memberShopIds.length > 0) {
+        const { data } = await supabase
+          .from("shops")
+          .select("*")
+          .in("id", memberShopIds);
+        memberShops = data || [];
+      }
 
-    // Sélectionne la première boutique par défaut
-    if (allShops.length > 0) {
-      await selectShop(userId, allShops[0]);
+      const ownedIds = new Set((ownedShops || []).map((s) => s.id));
+      const allShops: Shop[] = [
+        ...(ownedShops || []),
+        ...memberShops.filter((s) => !ownedIds.has(s.id)),
+      ];
+
+      setShops(allShops);
+
+      if (allShops.length > 0) {
+        await selectShop(userId, allShops[0]);
+      }
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   };
 
   const selectShop = async (userId: string, selectedShop: Shop) => {
