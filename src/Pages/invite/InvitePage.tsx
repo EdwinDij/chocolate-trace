@@ -72,7 +72,11 @@ export default function InvitePage() {
     });
 
     if (signUpError || !authData.user) {
-      setError(signUpError?.message ?? "Erreur lors de la création du compte.");
+      if (signUpError?.message?.includes("already registered")) {
+        setError("Un compte existe déjà avec cet email. Utilise un autre email ou contacte le gérant.");
+      } else {
+        setError(signUpError?.message ?? "Erreur lors de la création du compte.");
+      }
       setSubmitting(false);
       return;
     }
