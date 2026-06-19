@@ -1,5 +1,6 @@
 // src/pages/Alertes.tsx (Dashboard)
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
@@ -19,21 +20,25 @@ export default function Alertes() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-const { shop } = useShop();
+  const { id } = useParams<{ id: string }>();
+  const { shop } = useShop();
+  const shopId = id ?? shop?.id;
 
   const { showToast } = useToast();
   useEffect(() => {
-    fetchBatches(0);
-  }, []);
+    if (shopId) fetchBatches(0);
+  }, [shopId]);
 
   const fetchBatches = async (pageIndex: number) => {
+    if (!shopId) return;
     if (pageIndex === 0) setLoading(true);
     else setLoadingMore(true);
     const from = pageIndex * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("batches")
-      .select("*, products!type_id(name, week_lifetime)")
+      .select("*, products!product_id(name, week_lifetime)")
+      .eq("shop_id", shopId)
       .in("status", ["stock", "ouvert"])
       .order("created_at", { ascending: true })
       .range(from, to);
@@ -167,7 +172,7 @@ const { shop } = useShop();
               Vue d'Ensemble
             </h1>
             <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
-              État global de la fraîcheur en boutique
+              {shop?.name} — Fraîcheur & Alertes
             </p>
           </div>
           <span className="text-[10px] bg-ink-800 text-foam-100 border border-teal-500 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">

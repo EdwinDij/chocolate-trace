@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
@@ -43,23 +44,27 @@ export default function Suivi() {
   const [search, setSearch] = useState("");
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
+  const { id } = useParams<{ id: string }>();
   const { shop } = useShop();
+  const shopId = id ?? shop?.id;
 
   useEffect(() => {
-    fetchBatches(0);
-    fetchProducts();
-  }, []);
+    if (shopId) {
+      fetchBatches(0);
+      fetchProducts();
+    }
+  }, [shopId]);
 
   const fetchBatches = async (pageIndex: number) => {
     if (pageIndex === 0) setLoading(true);
     else setLoadingMore(true);
     const from = pageIndex * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
-    if (!shop) return;
+    if (!shopId) return;
     const { data, error } = await supabase
       .from("batches")
       .select("*, products!product_id(name, week_lifetime, category)")
-      .eq("shop_id", shop.id)
+      .eq("shop_id", shopId)
       .order("created_at", { ascending: false });
     if (!error) {
       setBatches((prev) =>
@@ -74,19 +79,21 @@ export default function Suivi() {
   };
 
   const fetchProducts = async () => {
-    if (!shop) return;
+    if (!shopId) return;
     const { data, error } = await supabase
       .from("products")
       .select("*")
-      .eq("shopp_id", shop.id)
+      .eq("shop_id", shopId)
       .order("name");
     if (!error) setProducts(data || []);
   };
 
   const addBatch = async () => {
-    if (!typeId || !reference.trim() || !weekReceiving || !quantity) return;
+    if (!typeId || !reference.trim() || !weekReceiving || !quantity || !shopId)
+      return;
     const { error } = await supabase.from("batches").insert({
-      type_id: typeId,
+      product_id: typeId,
+      shop_id: shopId,
       reference: reference.trim(),
       week_receiving: weekReceiving,
       week_opening: null,
@@ -289,7 +296,7 @@ export default function Suivi() {
               Suivi des Lots
             </h1>
             <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
-              Semaine {getCurrentWeekLabel()} — Traçabilité & Fraîcheur
+              {shop?.name} — Sem. {getCurrentWeekLabel()}
             </p>
           </div>
           <div className="flex items-center gap-2">

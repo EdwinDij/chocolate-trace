@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import { BatchStatus } from "../../types/batch";
 import { useShop } from "../../context/ShopContext";
@@ -42,28 +43,29 @@ export default function Historic() {
   >("tous");
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const { id } = useParams<{ id: string }>();
   const { shop } = useShop();
+  const shopId = id ?? shop?.id;
 
   const toggleGroup = (date: string) => {
     setOpenGroups((prev) => ({ ...prev, [date]: !prev[date] }));
   };
 
   const fetchHistoric = async () => {
-    if (!shop) return;
+    if (!shopId) return;
     const { data, error } = await supabase
       .from("historic")
       .select("*")
-      .eq("shop_id", shop.id)
+      .eq("shop_id", shopId)
       .order("created_at", { ascending: false });
     if (!error) setEntries(data || []);
     setLoading(false);
   };
 
-  console.log("Historic entries", entries);
   useEffect(() => {
-    if (!shop) return;
+    if (!shopId) return;
     fetchHistoric();
-  }, [shop]);
+  }, [shopId]);
   const filtered = entries.filter(
     (e) => filter === "tous" || e.status === filter,
   );
@@ -113,7 +115,7 @@ export default function Historic() {
             Historique
           </h1>
           <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
-            Traçabilité complète des lots retirés
+            {shop?.name} — Lots retirés
           </p>
         </div>
       </header>

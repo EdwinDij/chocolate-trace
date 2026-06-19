@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import { chocolateList } from "../../utils/chocolateList";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { Product } from "../../types/productType";
 import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
+import { useShop } from "../../context/ShopContext";
 
 export default function Management() {
   const [chocolate, setChocolate] = useState<Product[]>([]);
@@ -19,16 +21,22 @@ export default function Management() {
   const [editBarcode, setEditBarcode] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
+  const { id } = useParams<{ id: string }>();
+  const { shop } = useShop();
+  const shopId = id ?? shop?.id;
+
   const { toast, showToast, hideToast } = useToast();
 
   useEffect(() => {
-    fetchProduct();
-  }, []);
+    if (shopId) fetchProduct();
+  }, [shopId]);
 
   const fetchProduct = async () => {
+    if (!shopId) return;
     const { data, error } = await supabase
-      .from("product")
+      .from("products")
       .select("*")
+      .eq("shop_id", shopId)
       .order("name");
     if (!error) setChocolate(data || []);
     setLoading(false);
@@ -38,12 +46,13 @@ export default function Management() {
     e: React.MouseEvent<HTMLButtonElement> | React.FormEvent,
   ) => {
     e.preventDefault();
-    if (!name.trim() || !lifeWeeks) return;
+    if (!name.trim() || !lifeWeeks || !shopId) return;
 
-    const { error } = await supabase.from("chocolate_type").insert({
+    const { error } = await supabase.from("products").insert({
       name: name.trim(),
       week_lifetime: parseInt(lifeWeeks),
       barcode: barcode.trim() || null,
+      shop_id: shopId,
     });
 
     if (error) {
@@ -59,11 +68,7 @@ export default function Management() {
   };
 
   async function deleteType(id: string) {
-    console.log("Suppression du type avec ID :", id);
-    const { error } = await supabase
-      .from("chocolate_type")
-      .delete()
-      .eq("id", id);
+    const { error } = await supabase.from("products").delete().eq("id", id);
     if (!error) {
       fetchProduct();
       showToast("Chocolat supprimé avec succès !");
@@ -101,7 +106,7 @@ export default function Management() {
   const saveEdit = async () => {
     if (!editName.trim()) return;
     const { error } = await supabase
-      .from("chocolate_type")
+      .from("products")
       .update({
         name: editName.trim(),
         barcode: editBarcode.trim() || null,
@@ -124,7 +129,7 @@ export default function Management() {
               Catalogue
             </h1>
             <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
-              Gestion des recettes & durées de conservation
+              {shop?.name} — Recettes & conservations
             </p>
           </div>
           <span className="text-[10px] bg-ink-800 text-foam-100 border border-teal-500 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">

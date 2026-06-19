@@ -4,11 +4,13 @@ import Dashboard from "./Pages/dashboard/Dashboard";
 import Management from "./Pages/management/Management";
 import Historic from "./Pages/historic/Historic";
 import Auth from "./Pages/auth/auth";
-import { Routes, Route, Navigate  } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import AppLayout from "./layouts/AppLayout";
 import AuthLayout from "./layouts/AuthLayout";
 import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Boutique from "./Pages/shopDashboard/shopDashboard";
+import TeamPage from "./Pages/team/TeamPage";
+import InvitePage from "./Pages/invite/InvitePage";
 import { useShop } from "./context/ShopContext";
 
 function App() {
@@ -21,6 +23,7 @@ function App() {
         <Routes>
           <Route element={<AuthLayout />}>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/invite/:token" element={<InvitePage />} />
           </Route>
           <Route element={<AppLayout />}>
             <Route
@@ -103,14 +106,14 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            {/* <Route
+            <Route
               path="/boutique/:id/equipe"
               element={
                 <ProtectedRoute>
                   <TeamPage />
                 </ProtectedRoute>
               }
-            /> */}
+            />
           </Route>
           <Route
             path="/"
