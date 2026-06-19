@@ -70,13 +70,13 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full bg-[#3E2723] border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe">
+    <nav className="fixed bottom-0 left-0 w-full bg-[#3E2723] border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe text-foam-100">
       <ul className="flex justify-around items-center h-16 px-2">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path;
 
           return (
-            <li key={tab.path} className="flex-1 max-w-[100px]">
+            <li key={tab.path} className="flex-1 max-w-25">
               <Link
                 to={tab.path}
                 className={`flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-all duration-200 relative ${
@@ -85,19 +85,16 @@ export default function Navbar() {
                     : "text-amber-200/50 hover:text-amber-200/80 font-medium"
                 }`}
               >
-                {/* Icône animée au clic */}
                 <span
-                  className={`transition-transform duration-200 ${isActive ? "translate-y-[-1px]" : ""}`}
+                  className={`transition-transform duration-200 ${isActive ? "-translate-y-px" : ""}`}
                 >
                   {tab.icon}
                 </span>
 
-                {/* Label textuel ajusté */}
                 <span className="text-[10px] tracking-wide uppercase">
                   {tab.label}
                 </span>
 
-                {/* Petite puce lumineuse sous l'onglet actif */}
                 {isActive && (
                   <span className="absolute bottom-0 w-1 h-1 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]" />
                 )}

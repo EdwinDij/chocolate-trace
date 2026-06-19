@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { supabase } from "../../utils/supabase";
 import {
   Mail,
   Lock,
@@ -12,7 +14,7 @@ import {
 
 type Tab = "connexion" | "inscription";
 
-const METIERS = [
+const allWorks = [
   "Crémerie",
   "Charcuterie",
   "Traiteur",
@@ -25,18 +27,95 @@ const METIERS = [
 ];
 
 export default function Auth() {
+  const navigate = useNavigate();
   const [tab, setTab] = useState<Tab>("connexion");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [boutique, setBoutique] = useState("");
-  const [metier, setMetier] = useState("");
-  const [remember, setRemember] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [shop, setShop] = useState<string>("");
+  const [work, setWork] = useState<string>("");
+  const [remember, setRemember] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSignIn = async () => {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+      options: {
+        ...(remember && { expiresIn: 60 * 60 * 24 * 30 }),
+      },
+    } as any);
+    if (error) {
+      setError("Email ou mot de passe incorrect.");
+      return;
+    }
+
+    navigate("/");
+  };
+
+  const handleSignUp = async () => {
+    if (password.length < 8) {
+      setError("Le mot de passe doit contenir au moins 8 caractères.");
+      return;
+    }
+
+    //créer l'utilisateur dans Supabase
+    const { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+    });
+
+    if (signUpError || !data.user) {
+      setError("Une erreur est survenue lors de l'inscription.");
+      return;
+    }
+
+    const userId = data.user.id;
+
+    //créer la boutique
+    const { data: shopData, error: shopError } = await supabase
+      .from("shops")
+      .insert({
+        name: shop,
+        work: work,
+        plan: "gratuit",
+        owner_id: userId,
+      })
+      .select()
+      .single();
+
+    if (shopError || !shopData) {
+      setError("Erreur lors de la création de la boutique.");
+      return;
+    }
+
+    // créer le profile gérant
+    const { error: memberError } = await supabase.from("shop_member").insert({
+      user_id: userId,
+      shop_id: shopData.id,
+      role: "gerant",
+    });
+
+    if (memberError) {
+      setError("Erreur lors de la création du profil gérant.");
+      return;
+    }
+    navigate("/");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: brancher Supabase Auth
-    console.log({ tab, email, password, remember, boutique, metier });
+    setError(null);
+    setLoading(true);
+
+    if (tab === "connexion") {
+      await handleSignIn();
+    } else {
+      await handleSignUp();
+    }
+
+    setLoading(false);
   };
 
   return (
@@ -54,14 +133,15 @@ export default function Auth() {
         </p>
       </div>
 
-      {/* Card */}
       <div className="flex-1 bg-white rounded-t-3xl px-4 pt-8 pb-10">
-        {/* Toggle */}
         <div className="flex bg-slate-100 rounded-xl p-1 mb-8">
           {(["connexion", "inscription"] as Tab[]).map((t) => (
             <button
               key={t}
-              onClick={() => setTab(t)}
+              onClick={() => {
+                setTab(t);
+                setError(null);
+              }}
               className={`flex-1 py-2.5 rounded-[10px] text-sm font-bold transition-all ${
                 tab === t ? "bg-white text-ink-900 shadow-sm" : "text-slate-400"
               }`}
@@ -75,7 +155,6 @@ export default function Auth() {
           {/* Champs inscription uniquement */}
           {tab === "inscription" && (
             <>
-              {/* Nom établissement */}
               <div>
                 <label className="text-micro font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
                   Nom de l'établissement
@@ -84,8 +163,8 @@ export default function Auth() {
                   <Store size={16} className="text-slate-400 shrink-0" />
                   <input
                     type="text"
-                    value={boutique}
-                    onChange={(e) => setBoutique(e.target.value)}
+                    value={shop}
+                    onChange={(e) => setShop(e.target.value)}
                     placeholder="ex. Fromagerie du Marché"
                     required
                     className="flex-1 text-sm text-slate-800 placeholder-slate-300 focus:outline-none bg-transparent"
@@ -100,15 +179,15 @@ export default function Auth() {
                 </label>
                 <div className="relative">
                   <select
-                    value={metier}
-                    onChange={(e) => setMetier(e.target.value)}
+                    value={work}
+                    onChange={(e) => setWork(e.target.value)}
                     required
                     className="w-full border border-slate-200 rounded-xl px-4 py-3 text-sm bg-sunk text-slate-800 focus:outline-none focus:border-teal-500 transition-colors appearance-none pr-10"
                   >
                     <option value="">Sélectionner un métier...</option>
-                    {METIERS.map((m) => (
-                      <option key={m} value={m.toLowerCase()}>
-                        {m}
+                    {allWorks.map((w) => (
+                      <option key={w} value={w.toLowerCase()}>
+                        {w}
                       </option>
                     ))}
                   </select>
@@ -121,7 +200,6 @@ export default function Auth() {
             </>
           )}
 
-          {/* Email */}
           <div>
             <label className="text-micro font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
               E-mail professionnel
@@ -139,7 +217,6 @@ export default function Auth() {
             </div>
           </div>
 
-          {/* Mot de passe */}
           <div>
             <label className="text-micro font-bold text-slate-400 uppercase tracking-wider mb-1.5 block">
               Mot de passe
@@ -168,7 +245,6 @@ export default function Auth() {
             </div>
           </div>
 
-          {/* Se souvenir + mot de passe oublié — connexion seulement */}
           {tab === "connexion" && (
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
@@ -189,7 +265,6 @@ export default function Auth() {
             </div>
           )}
 
-          {/* CGU — inscription seulement */}
           {tab === "inscription" && (
             <label className="flex items-start gap-2.5 cursor-pointer">
               <input
@@ -216,13 +291,24 @@ export default function Auth() {
             </label>
           )}
 
-          {/* Submit */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 font-medium">
+              {error}
+            </div>
+          )}
           <button
             type="submit"
-            className="w-full bg-ink-800 hover:bg-ink-900 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-95 mt-2"
+            disabled={loading}
+            className="w-full bg-ink-800 hover:bg-ink-900 disabled:opacity-50 text-white font-bold py-4 rounded-xl flex items-center justify-center gap-2 transition-colors active:scale-95 mt-2"
           >
-            {tab === "connexion" ? "Se connecter" : "Créer mon compte"}
-            <ArrowRight size={16} />
+            {loading ? (
+              <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              <>
+                {tab === "connexion" ? "Se connecter" : "Créer mon compte"}
+                <ArrowRight size={16} />
+              </>
+            )}
           </button>
         </form>
       </div>

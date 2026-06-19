@@ -20,14 +20,16 @@ export default function Toast({
     <div
       className={`fixed top-5 left-1/2 -translate-x-1/2 z-50 
         flex items-center gap-3 px-5 py-3.5 rounded-2xl shadow-2xl
-        backdrop-blur-sm border animate-fade-in min-w-[220px] max-w-[320px]
-        ${type === "success"
-          ? "bg-green-800/95 border-green-600/40 text-white"
-          : "bg-red-600/95 border-red-400/40 text-white"
+        backdrop-blur-sm border animate-fade-in min-w-55 max-w-[320px]
+        ${
+          type === "success"
+            ? "bg-green-800/95 border-green-600/40 text-white"
+            : "bg-red-600/95 border-red-400/40 text-white"
         }`}
     >
       {/* Icône */}
-      <div className={`w-7 h-7 rounded-full flex items-center justify-center flex-shrink-0
+      <div
+        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0
         ${type === "success" ? "bg-green-600/60" : "bg-red-500/60"}`}
       >
         <span className="text-sm">{type === "success" ? "✓" : "✕"}</span>
