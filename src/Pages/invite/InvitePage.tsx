@@ -83,12 +83,10 @@ export default function InvitePage() {
       user_id: userId,
       shop_id: invitation.shop_id,
       role: "employe",
-      display_name: firstName.trim(),
-      email,
     });
 
     if (memberError) {
-      setError("Erreur lors de l'ajout au magasin.");
+      setError(`Erreur lors de l'ajout au magasin : ${memberError.message}`);
       setSubmitting(false);
       return;
     }
