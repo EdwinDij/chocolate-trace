@@ -67,6 +67,9 @@ export default function Auth() {
     });
 
     if (signUpError || !data.user) {
+      console.log(signUpError);
+      console.log(data, "data");
+      console.log(data.user, "datauser");
       setError("Une erreur est survenue lors de l'inscription.");
       return;
     }
