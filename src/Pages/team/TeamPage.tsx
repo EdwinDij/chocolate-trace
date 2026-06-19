@@ -66,6 +66,7 @@ export default function TeamPage() {
     const { error } = await supabase.from("invitations").insert({
       shop_id: shopId,
       token,
+      role: "employe",
       expires_at: expiresAt,
     });
 

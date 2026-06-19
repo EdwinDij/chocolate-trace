@@ -6,6 +6,7 @@ interface Invitation {
   id: string;
   shop_id: string;
   token: string;
+  role: string;
   expires_at: string;
   used_at: string | null;
 }
@@ -82,7 +83,7 @@ export default function InvitePage() {
     const { error: memberError } = await supabase.from("shop_member").insert({
       user_id: userId,
       shop_id: invitation.shop_id,
-      role: "employe",
+      role: invitation.role ?? "employe",
     });
 
     if (memberError) {
