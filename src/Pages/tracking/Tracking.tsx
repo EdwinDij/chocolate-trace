@@ -111,9 +111,7 @@ export default function Suivi() {
     if (!typeId || !reference.trim() || !weekReceiving || !quantity || !shopId)
       return;
     const finalWithdrawal =
-      differentWithdrawal && withdrawalDate
-        ? withdrawalDate
-        : expirationDate || null;
+      differentWithdrawal && withdrawalDate ? withdrawalDate : expirationDate || null;
     const { error } = await supabase.from("batches").insert({
       product_id: typeId,
       shop_id: shopId,
@@ -124,10 +122,10 @@ export default function Suivi() {
       last_status: null,
       status: BatchStatus.STOCK,
       expiration_date: expirationDate || null,
-      withdrawal_date:
-        finalWithdrawal !== expirationDate ? finalWithdrawal : null,
+      withdrawal_date: finalWithdrawal !== expirationDate ? finalWithdrawal : null,
     });
 
+    console.log(error,"err")
     if (!error) {
       showToast("Lot ajouté avec succès !");
       setTypeId("");
@@ -167,44 +165,36 @@ export default function Suivi() {
   ) => {
     e.stopPropagation();
     const batch = batches.find((b) => b.id === id)!;
+    const previousStatus = batch.status;
 
     if (status === BatchStatus.EPUISE) {
       const confirmEpuise = window.confirm(
         "Confirmez-vous que ce lot est épuisé ?",
       );
       if (!confirmEpuise) return;
-      const archiveError = await archiveBatch(batch, BatchStatus.EPUISE);
-      if (archiveError) {
-        showToast(`Erreur archivage : ${archiveError.message}`, "error");
-        return;
-      }
+      await archiveBatch(batch, BatchStatus.EPUISE);
       await supabase.from("batches").delete().eq("id", id);
       showToast("Lot épuisé et archivé !");
       fetchBatches(0);
       return;
     }
+
     if (status === BatchStatus.NON_CONFORME) {
       const reason = window.prompt(
         "Raison de non-conformité (ex: moisissure, choc thermique...)",
       );
-      if (reason === null) return;
-      const archiveError = await archiveBatch(
+      if (reason === null) return; // annulé
+      const error = await archiveBatch(
         batch,
         BatchStatus.NON_CONFORME,
         reason || undefined,
       );
-      if (archiveError) {
-        showToast(`Erreur archivage : ${archiveError.message}`, "error");
-        return;
-      }
+      // console.log("archiveBatch error:", error);
+      // console.log("batch envoyé:", batch);
     }
 
     if (status === BatchStatus.PERIME) {
-      const archiveError = await archiveBatch(batch, BatchStatus.PERIME);
-      if (archiveError) {
-        showToast(`Erreur archivage : ${archiveError.message}`, "error");
-        return;
-      }
+      await archiveBatch(batch, BatchStatus.PERIME);
     }
 
     const { error } = await supabase
@@ -264,10 +254,7 @@ export default function Suivi() {
       if (filter === "Périmés") return b.status === BatchStatus.PERIME;
       if (filter === "À retirer") {
         if (b.withdrawal_date || b.expiration_date) {
-          const st = computeStatusFromDates(
-            b.withdrawal_date,
-            b.expiration_date,
-          );
+          const st = computeStatusFromDates(b.withdrawal_date, b.expiration_date);
           return st === "expired" || st === "warning";
         }
         return dates?.status === "expired" || dates?.status === "warning";
@@ -339,7 +326,7 @@ export default function Suivi() {
     fetchBatches(0);
   };
   return (
-    <div className="min-h-screen bg-app pb-36 font-sans antialiased">
+    <div className="min-h-screen bg-app pb-24 font-sans antialiased">
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
           <div>
@@ -582,13 +569,7 @@ export default function Suivi() {
               )}
               {differentWithdrawal && withdrawalDate && expirationDate && (
                 <p className="text-xs text-amber-600 font-medium mt-1">
-                  Retrait{" "}
-                  {Math.round(
-                    (new Date(expirationDate).getTime() -
-                      new Date(withdrawalDate).getTime()) /
-                      86400000,
-                  )}{" "}
-                  j. avant la DLC
+                  Retrait {Math.round((new Date(expirationDate).getTime() - new Date(withdrawalDate).getTime()) / 86400000)} j. avant la DLC
                 </p>
               )}
             </div>
@@ -719,24 +700,19 @@ export default function Suivi() {
                       <span className="flex items-center gap-1 ml-auto text-amber-900/80">
                         <span className="text-amber-700/40">📅</span> Retrait :{" "}
                         <strong className="font-bold text-amber-900">
-                          {formatDateFR(
-                            batch.withdrawal_date ?? batch.expiration_date!,
-                          )}
+                          {formatDateFR(batch.withdrawal_date ?? batch.expiration_date!)}
                         </strong>
                       </span>
                     )}
                     {/* Fallback pour les anciens lots sans dates stockées */}
-                    {!batch.expiration_date &&
-                      !batch.withdrawal_date &&
-                      dates && (
-                        <span className="flex items-center gap-1 ml-auto text-amber-900/80">
-                          <span className="text-amber-700/40">📅</span> Retrait
-                          :{" "}
-                          <strong className="font-bold text-amber-900">
-                            {dates.withdrawalDate}
-                          </strong>
-                        </span>
-                      )}
+                    {!batch.expiration_date && !batch.withdrawal_date && dates && (
+                      <span className="flex items-center gap-1 ml-auto text-amber-900/80">
+                        <span className="text-amber-700/40">📅</span> Retrait :{" "}
+                        <strong className="font-bold text-amber-900">
+                          {dates.withdrawalDate}
+                        </strong>
+                      </span>
+                    )}
                   </div>
 
                   <div className="mt-4 flex gap-2">
