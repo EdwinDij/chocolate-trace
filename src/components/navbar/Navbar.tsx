@@ -1,10 +1,14 @@
-import { Link, useLocation,useParams  } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useShop } from "../../context/ShopContext";
+
+function getInitials(name: string): string {
+  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+}
 
 export default function Navbar() {
   const location = useLocation();
   const { id } = useParams();
-  const { shop, member } = useShop();
+  const { shop, member, user, signOut } = useShop();
     const shopId = id || shop?.id;
 
   const baseTabs = [
@@ -95,8 +99,28 @@ export default function Navbar() {
   const tabs =
     member?.role !== "employe" ? [...baseTabs, equipeTab] : baseTabs;
 
+  const displayName = user?.user_metadata?.display_name as string | undefined;
+
   return (
     <nav className="fixed bottom-0 left-0 w-full bg-ink-800 border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe text-foam-100">
+      {displayName && (
+        <div className="flex items-center justify-between px-4 pt-2 pb-1 border-b border-amber-900/20">
+          <div className="flex items-center gap-2">
+            <div className="w-6 h-6 rounded-full bg-teal-700/60 flex items-center justify-center text-[10px] font-black text-teal-100 shrink-0">
+              {getInitials(displayName)}
+            </div>
+            <span className="text-xs font-semibold text-foam-100/80 truncate max-w-[160px]">
+              {displayName}
+            </span>
+          </div>
+          <button
+            onClick={signOut}
+            className="text-[10px] font-bold text-amber-200/40 hover:text-amber-200/70 transition-colors uppercase tracking-wider"
+          >
+            Déconnexion
+          </button>
+        </div>
+      )}
       <ul className="flex justify-around items-center h-16 px-2">
         {tabs.map((tab) => {
           const isActive =
