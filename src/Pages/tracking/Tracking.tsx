@@ -168,14 +168,17 @@ export default function Suivi() {
   ) => {
     e.stopPropagation();
     const batch = batches.find((b) => b.id === id)!;
-    const previousStatus = batch.status;
 
     if (status === BatchStatus.EPUISE) {
       const confirmEpuise = window.confirm(
         "Confirmez-vous que ce lot est épuisé ?",
       );
       if (!confirmEpuise) return;
-      await archiveBatch(batch, BatchStatus.EPUISE);
+      const archiveError = await archiveBatch(batch, BatchStatus.EPUISE);
+      if (archiveError) {
+        showToast(`Erreur archivage : ${archiveError.message}`, "error");
+        return;
+      }
       await supabase.from("batches").delete().eq("id", id);
       showToast("Lot épuisé et archivé !");
       fetchBatches(0);
@@ -186,18 +189,24 @@ export default function Suivi() {
       const reason = window.prompt(
         "Raison de non-conformité (ex: moisissure, choc thermique...)",
       );
-      if (reason === null) return; // annulé
-      const error = await archiveBatch(
+      if (reason === null) return;
+      const archiveError = await archiveBatch(
         batch,
         BatchStatus.NON_CONFORME,
         reason || undefined,
       );
-      // console.log("archiveBatch error:", error);
-      // console.log("batch envoyé:", batch);
+      if (archiveError) {
+        showToast(`Erreur archivage : ${archiveError.message}`, "error");
+        return;
+      }
     }
 
     if (status === BatchStatus.PERIME) {
-      await archiveBatch(batch, BatchStatus.PERIME);
+      const archiveError = await archiveBatch(batch, BatchStatus.PERIME);
+      if (archiveError) {
+        showToast(`Erreur archivage : ${archiveError.message}`, "error");
+        return;
+      }
     }
 
     const { error } = await supabase
