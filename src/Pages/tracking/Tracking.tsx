@@ -128,7 +128,6 @@ export default function Suivi() {
         finalWithdrawal !== expirationDate ? finalWithdrawal : null,
     });
 
-    console.log(error, "err");
     if (!error) {
       showToast("Lot ajouté avec succès !");
       setTypeId("");
@@ -184,7 +183,6 @@ export default function Suivi() {
       fetchBatches(0);
       return;
     }
-    console.log(status, "status");
     if (status === BatchStatus.NON_CONFORME) {
       const reason = window.prompt(
         "Raison de non-conformité (ex: moisissure, choc thermique...)",
