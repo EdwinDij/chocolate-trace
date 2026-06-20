@@ -114,7 +114,7 @@
   /* ════════════════ ESPACEMENTS ════════════════
      Base 4px = défaut Tailwind. Tokens nommés utiles : */
   --spacing-gutter: 16px; /* px-4 : marge horizontale d'écran */
-  --spacing-nav: 96px; /* pb-24 : dégagement nav fixe */
+  --spacing-nav: 144px; /* pb-36 : dégagement nav fixe (user bar + tab row) */
   --spacing-header-pt: 32px; /* padding haut du header */
   --spacing-header-pb: 24px;
 

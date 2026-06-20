@@ -58,7 +58,6 @@ export default function Historic() {
       .select("*")
       .eq("shop_id", shopId)
       .order("created_at", { ascending: false });
-    console.log(data,"datahisto")
     if (!error) setEntries(data || []);
     setLoading(false);
   };
@@ -109,7 +108,7 @@ export default function Historic() {
   }, [entries]);
 
   return (
-    <div className="min-h-screen bg-app pb-24 font-sans antialiased">
+    <div className="min-h-screen bg-app pb-36 font-sans antialiased">
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div>
           <h1 className="text-xl font-black tracking-tight text-foam-100">

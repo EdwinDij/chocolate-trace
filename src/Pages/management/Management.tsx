@@ -130,7 +130,7 @@ export default function Management() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-app pb-24 font-sans antialiased">
+    <div className="min-h-screen bg-app pb-36 font-sans antialiased">
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
           <div>
