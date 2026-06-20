@@ -58,7 +58,8 @@ export default function Alertes() {
     () =>
       batches.map((b) => ({
         batch: b,
-        dates: computeBatchesDates(b.week_receiving, b.products.week_lifetime),
+        // ensure nullable numbers are converted to a safe default for the util
+        dates: computeBatchesDates(b.week_receiving ?? 0, b.products.week_lifetime ?? 0),
       })),
     [batches],
   );
@@ -104,9 +105,10 @@ export default function Alertes() {
     isCritical: boolean;
     onDelete?: (id: string) => void;
   }) => {
+    // ensure week_lifetime is a number (fallback to 0 if null) to satisfy TS
     const dates = computeBatchesDates(
       batch.week_receiving,
-      batch.products.week_lifetime,
+      batch.products.week_lifetime ?? 0,
     );
     if (!dates) return null;
 

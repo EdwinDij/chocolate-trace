@@ -58,6 +58,7 @@ export default function Historic() {
       .select("*")
       .eq("shop_id", shopId)
       .order("created_at", { ascending: false });
+    console.log(data,"datahisto")
     if (!error) setEntries(data || []);
     setLoading(false);
   };

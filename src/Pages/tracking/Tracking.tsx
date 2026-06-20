@@ -111,7 +111,9 @@ export default function Suivi() {
     if (!typeId || !reference.trim() || !weekReceiving || !quantity || !shopId)
       return;
     const finalWithdrawal =
-      differentWithdrawal && withdrawalDate ? withdrawalDate : expirationDate || null;
+      differentWithdrawal && withdrawalDate
+        ? withdrawalDate
+        : expirationDate || null;
     const { error } = await supabase.from("batches").insert({
       product_id: typeId,
       shop_id: shopId,
@@ -122,8 +124,11 @@ export default function Suivi() {
       last_status: null,
       status: BatchStatus.STOCK,
       expiration_date: expirationDate || null,
-      withdrawal_date: finalWithdrawal !== expirationDate ? finalWithdrawal : null,
+      withdrawal_date:
+        finalWithdrawal !== expirationDate ? finalWithdrawal : null,
     });
+
+    console.log(error, "err");
     if (!error) {
       showToast("Lot ajouté avec succès !");
       setTypeId("");
@@ -176,7 +181,7 @@ export default function Suivi() {
       fetchBatches(0);
       return;
     }
-
+    console.log(status, "status");
     if (status === BatchStatus.NON_CONFORME) {
       const reason = window.prompt(
         "Raison de non-conformité (ex: moisissure, choc thermique...)",
@@ -252,7 +257,10 @@ export default function Suivi() {
       if (filter === "Périmés") return b.status === BatchStatus.PERIME;
       if (filter === "À retirer") {
         if (b.withdrawal_date || b.expiration_date) {
-          const st = computeStatusFromDates(b.withdrawal_date, b.expiration_date);
+          const st = computeStatusFromDates(
+            b.withdrawal_date,
+            b.expiration_date,
+          );
           return st === "expired" || st === "warning";
         }
         return dates?.status === "expired" || dates?.status === "warning";
@@ -567,7 +575,13 @@ export default function Suivi() {
               )}
               {differentWithdrawal && withdrawalDate && expirationDate && (
                 <p className="text-xs text-amber-600 font-medium mt-1">
-                  Retrait {Math.round((new Date(expirationDate).getTime() - new Date(withdrawalDate).getTime()) / 86400000)} j. avant la DLC
+                  Retrait{" "}
+                  {Math.round(
+                    (new Date(expirationDate).getTime() -
+                      new Date(withdrawalDate).getTime()) /
+                      86400000,
+                  )}{" "}
+                  j. avant la DLC
                 </p>
               )}
             </div>
@@ -698,19 +712,24 @@ export default function Suivi() {
                       <span className="flex items-center gap-1 ml-auto text-amber-900/80">
                         <span className="text-amber-700/40">📅</span> Retrait :{" "}
                         <strong className="font-bold text-amber-900">
-                          {formatDateFR(batch.withdrawal_date ?? batch.expiration_date!)}
+                          {formatDateFR(
+                            batch.withdrawal_date ?? batch.expiration_date!,
+                          )}
                         </strong>
                       </span>
                     )}
                     {/* Fallback pour les anciens lots sans dates stockées */}
-                    {!batch.expiration_date && !batch.withdrawal_date && dates && (
-                      <span className="flex items-center gap-1 ml-auto text-amber-900/80">
-                        <span className="text-amber-700/40">📅</span> Retrait :{" "}
-                        <strong className="font-bold text-amber-900">
-                          {dates.withdrawalDate}
-                        </strong>
-                      </span>
-                    )}
+                    {!batch.expiration_date &&
+                      !batch.withdrawal_date &&
+                      dates && (
+                        <span className="flex items-center gap-1 ml-auto text-amber-900/80">
+                          <span className="text-amber-700/40">📅</span> Retrait
+                          :{" "}
+                          <strong className="font-bold text-amber-900">
+                            {dates.withdrawalDate}
+                          </strong>
+                        </span>
+                      )}
                   </div>
 
                   <div className="mt-4 flex gap-2">
