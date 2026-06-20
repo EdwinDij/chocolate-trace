@@ -104,24 +104,24 @@ export default function Navbar() {
   return (
     <nav className="fixed bottom-0 left-0 w-full bg-ink-800 border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe text-foam-100">
       {displayName && (
-        <div className="flex items-center justify-between px-4 pt-2 pb-1 border-b border-amber-900/20">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between px-4 pt-2 pb-1 border-b border-amber-900/20 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
             <div className="w-6 h-6 rounded-full bg-teal-700/60 flex items-center justify-center text-[10px] font-black text-teal-100 shrink-0">
               {getInitials(displayName)}
             </div>
-            <span className="text-xs font-semibold text-foam-100/80 truncate max-w-[160px]">
+            <span className="text-xs font-semibold text-foam-100/80 truncate">
               {displayName}
             </span>
           </div>
           <button
             onClick={signOut}
-            className="text-[10px] font-bold text-amber-200/40 hover:text-amber-200/70 transition-colors uppercase tracking-wider"
+            className="shrink-0 ml-3 text-[10px] font-bold text-amber-200/40 hover:text-amber-200/70 transition-colors uppercase tracking-wider"
           >
-            Déconnexion
+            Déco.
           </button>
         </div>
       )}
-      <ul className="flex justify-around items-center h-16 px-2">
+      <ul className="flex items-center h-16 px-1">
         {tabs.map((tab) => {
           const isActive =
           tab.path === `/boutique/${shopId}`
@@ -129,22 +129,20 @@ export default function Navbar() {
             : location.pathname.startsWith(tab.path);
 
           return (
-            <li key={tab.path} className="flex-1 max-w-25">
+            <li key={tab.path} className="flex-1 min-w-0 overflow-hidden">
               <Link
                 to={tab.path}
-                className={`flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-all duration-200 relative ${
+                className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl transition-colors duration-200 relative w-full ${
                   isActive
-                    ? "text-foam-100 font-bold scale-105"
-                    : "text-amber-200/50 hover:text-amber-200/80 font-medium"
+                    ? "text-foam-100"
+                    : "text-amber-200/50 hover:text-amber-200/80"
                 }`}
               >
-                <span
-                  className={`transition-transform duration-200 ${isActive ? "-translate-y-px" : ""}`}
-                >
+                <span className={`transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-70"}`}>
                   {tab.icon}
                 </span>
 
-                <span className="text-[10px] tracking-wide uppercase">
+                <span className="text-[9px] tracking-wide uppercase font-semibold truncate w-full text-center px-0.5">
                   {tab.label}
                 </span>
 
