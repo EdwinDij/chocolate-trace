@@ -72,15 +72,11 @@ export default function Auth() {
     });
 
     if (signUpError || !data.user) {
-      console.log(signUpError);
-      console.log(data, "data");
-      console.log(data.user, "datauser");
       setError("Une erreur est survenue lors de l'inscription.");
       return;
     }
 
     const userId = data.user.id;
-    console.log(data.user, "data user");
     //créer la boutique
     const { data: shopData, error: shopError } = await supabase
       .from("shops")
