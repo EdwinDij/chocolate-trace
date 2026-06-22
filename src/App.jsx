@@ -12,6 +12,7 @@ import Boutique from "./Pages/shopDashboard/shopDashboard";
 import TeamPage from "./Pages/team/TeamPage";
 import InvitePage from "./Pages/invite/InvitePage";
 import LotDetail from "./Pages/lotDetail/LotDetail";
+import PricingPage from "./Pages/pricing/PricingPage";
 import { useShop } from "./context/ShopContext";
 
 function App() {
@@ -120,6 +121,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <LotDetail />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/tarifs"
+              element={
+                <ProtectedRoute>
+                  <PricingPage />
                 </ProtectedRoute>
               }
             />
