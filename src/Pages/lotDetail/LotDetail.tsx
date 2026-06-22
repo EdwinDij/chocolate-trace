@@ -297,32 +297,32 @@ export default function LotDetail() {
               {batch.status === BatchStatus.STOCK && (
                 <button
                   onClick={() => setSheet("ouvrir")}
-                  className="col-span-2 min-h-[52px] bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
+                  className="col-span-2 min-h-13 bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
                 >
                   🔓 Ouvrir le lot
                 </button>
               )}
               <button
                 onClick={() => setSheet("perime")}
-                className="min-h-[52px] bg-red-50/70 text-red-600 border border-red-100 hover:bg-red-50 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-13 bg-red-50/70 text-red-600 border border-red-100 hover:bg-red-50 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Périmé
               </button>
               <button
                 onClick={() => setSheet("non_conforme")}
-                className="min-h-[52px] bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-13 bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Non conf.
               </button>
               <button
                 onClick={() => setSheet("epuise")}
-                className="min-h-[52px] bg-sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-13 bg-sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Épuisé
               </button>
               <button
                 onClick={() => navigate(-1)}
-                className="min-h-[52px] bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-13 bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Retour
               </button>
@@ -332,7 +332,7 @@ export default function LotDetail() {
           {batch.status === BatchStatus.PERIME && (
             <button
               onClick={() => setSheet("supprimer")}
-              className="w-full min-h-[52px] bg-red-600 text-white hover:bg-red-700 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
+              className="w-full min-h-13 bg-red-600 text-white hover:bg-red-700 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
             >
               🗑 Supprimer définitivement
             </button>
@@ -341,7 +341,7 @@ export default function LotDetail() {
           {!isActive && batch.status !== BatchStatus.PERIME && (
             <button
               onClick={() => navigate(-1)}
-              className="w-full min-h-[52px] bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+              className="w-full min-h-13 bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
             >
               Retour
             </button>
@@ -388,7 +388,7 @@ function TimelineItem({
       <div className="flex flex-col items-center w-4 shrink-0">
         <div className={`w-3 h-3 rounded-full ${color} shrink-0 mt-0.5`} />
         {hasLine && (
-          <div className="w-px flex-1 bg-stone-100 mt-1 mb-1 min-h-[20px]" />
+          <div className="w-px flex-1 bg-stone-100 mt-1 mb-1 min-h-5" />
         )}
       </div>
       <div className={`min-w-0 ${hasLine ? "pb-4" : "pb-0"}`}>
