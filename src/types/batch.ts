@@ -9,16 +9,19 @@ export enum BatchStatus {
 export interface Batch {
   id: string;
   reference: string;
-  type_id: string;
+  product_id: string;
   week_receiving: string;
   week_opening: string | null;
   quantity: number;
   status: string;
   last_status: string | null;
+  shop_id: string;
   created_at: string;
-  chocolate_type: {
+  expiration_date: string | null;
+  withdrawal_date: string | null;
+  products: {
     name: string;
-    week_lifetime: number;
-    type: string;
+    week_lifetime: number | null;
+    category: string | null;
   };
 }

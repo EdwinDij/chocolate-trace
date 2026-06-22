@@ -11,7 +11,7 @@ export function getISOWeek(date: Date = new Date()): number {
       ((d.getTime() - week1.getTime()) / 86400000 -
         3 +
         ((week1.getDay() + 6) % 7)) /
-        7,
+      7,
     )
   );
 }
@@ -94,6 +94,33 @@ export function computeStatus(
   return "ok"; // En bonne forme
 }
 
+export function endOfWeekFromToday(weeks: number): string {
+  const d = new Date();
+  d.setDate(d.getDate() + weeks * 7);
+  const day = d.getDay();
+  if (day !== 0) d.setDate(d.getDate() + (7 - day));
+  return d.toISOString().split("T")[0];
+}
+
+export function computeStatusFromDates(
+  withdrawalDate: string | null,
+  expirationDate: string | null,
+): "expired" | "warning" | "ok" {
+  const ref = withdrawalDate || expirationDate;
+  if (!ref) return "ok";
+  const diffWeeks =
+    (new Date(ref).getTime() - new Date().getTime()) / (7 * 86400000);
+  return computeStatus(diffWeeks);
+}
+
+export function formatDateFR(isoDate: string): string {
+  return new Date(isoDate).toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
+}
+
 export interface StatusStyle {
   bg: string;
   text: string;
@@ -116,7 +143,7 @@ export function getStatusStyle(status: string): StatusStyle {
     case "ouvert":
       return { bg: "bg-amber-100", text: "text-amber-700", label: "Ouvert" };
     case "stock":
-      return { bg: "bg-stone-100", text: "text-stone-500", label: "En stock" };
+      return { bg: "bg-stone-100", text: "text-slate-500", label: "En stock" };
     case "perime":
       return { bg: "bg-red-100", text: "text-red-400", label: "Périmé" };
     case "non_conforme":
@@ -126,6 +153,6 @@ export function getStatusStyle(status: string): StatusStyle {
         label: "Non conforme",
       };
     default:
-      return { bg: "bg-stone-100", text: "text-stone-500", label: "—" };
+      return { bg: "bg-stone-100", text: "text-slate-500", label: "—" };
   }
 }

@@ -15,7 +15,6 @@ export default function BarcodeScanner({
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const readerRef = useRef<BrowserMultiFormatReader | null>(null);
 
-
   useEffect(() => {
     const constraints: MediaStreamConstraints = {
       video: {
@@ -75,7 +74,7 @@ export default function BarcodeScanner({
         <p className="text-white/50 text-xs text-center mt-1">{debugMsg}</p>
         <button
           onClick={onClose}
-          className="mt-4 w-full bg-white/10 text-white border border-white/20 py-3 rounded-xl text-sm font-medium"
+          className="mt-4 w-full bg-card/10 text-white border border-white/20 py-3 rounded-xl text-sm font-medium"
         >
           ✕ Annuler
         </button>

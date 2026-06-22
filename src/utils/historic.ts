@@ -8,14 +8,13 @@ export async function archiveBatch(
 ) {
   const { error } = await supabase.from("historic").insert({
     batch_id: batch.id,
-    type_name: batch.chocolate_type.name,
+    shop_id: batch.shop_id,
+    type_name: batch.products.name,
     reference: batch.reference,
     status,
     reason: reason || null,
     week_receiving: batch.week_receiving,
   });
-  // console.log("Archiving batch", batch.reference, "with status", status, "and reason", reason);
-  // console.log("historic insert error:", error);
 
   return error;
 }

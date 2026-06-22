@@ -1,5 +1,6 @@
 // src/pages/Alertes.tsx (Dashboard)
 import { useEffect, useMemo, useState } from "react";
+import { useParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
@@ -9,6 +10,7 @@ import {
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
 import { Batch } from "../../types/batch";
+import { useShop } from "../../context/ShopContext";
 
 const PAGE_SIZE = 20;
 
@@ -18,25 +20,32 @@ export default function Alertes() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const { id } = useParams<{ id: string }>();
+  const { shop } = useShop();
+  const shopId = id ?? shop?.id;
 
   const { showToast } = useToast();
   useEffect(() => {
-    fetchBatches(0);
-  }, []);
+    if (shopId) fetchBatches(0);
+  }, [shopId]);
 
   const fetchBatches = async (pageIndex: number) => {
+    if (!shopId) return;
     if (pageIndex === 0) setLoading(true);
     else setLoadingMore(true);
     const from = pageIndex * PAGE_SIZE;
     const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("batches")
-      .select("*, chocolate_type!type_id(name, week_lifetime)")
+      .select("*, products!product_id(name, week_lifetime)")
+      .eq("shop_id", shopId)
       .in("status", ["stock", "ouvert"])
       .order("created_at", { ascending: true })
       .range(from, to);
     if (!error) {
-      setBatches((prev) => (pageIndex === 0 ? data || [] : [...prev, ...(data || [])]));
+      setBatches((prev) =>
+        pageIndex === 0 ? data || [] : [...prev, ...(data || [])],
+      );
       setHasMore((data?.length ?? 0) === PAGE_SIZE);
       setPage(pageIndex);
     }
@@ -49,23 +58,33 @@ export default function Alertes() {
     () =>
       batches.map((b) => ({
         batch: b,
-        dates: computeBatchesDates(b.week_receiving, b.chocolate_type.week_lifetime),
+        // ensure nullable numbers are converted to a safe default for the util
+        dates: computeBatchesDates(b.week_receiving ?? 0, b.products.week_lifetime ?? 0),
       })),
     [batches],
   );
 
   const expired = useMemo(
-    () => batchesWithDates.filter(({ dates }) => dates?.status === "expired").map(({ batch }) => batch),
+    () =>
+      batchesWithDates
+        .filter(({ dates }) => dates?.status === "expired")
+        .map(({ batch }) => batch),
     [batchesWithDates],
   );
 
   const warning = useMemo(
-    () => batchesWithDates.filter(({ dates }) => dates?.status === "warning").map(({ batch }) => batch),
+    () =>
+      batchesWithDates
+        .filter(({ dates }) => dates?.status === "warning")
+        .map(({ batch }) => batch),
     [batchesWithDates],
   );
 
   const ok = useMemo(
-    () => batchesWithDates.filter(({ dates }) => dates?.status === "ok").map(({ batch }) => batch),
+    () =>
+      batchesWithDates
+        .filter(({ dates }) => dates?.status === "ok")
+        .map(({ batch }) => batch),
     [batchesWithDates],
   );
 
@@ -86,26 +105,27 @@ export default function Alertes() {
     isCritical: boolean;
     onDelete?: (id: string) => void;
   }) => {
+    // ensure week_lifetime is a number (fallback to 0 if null) to satisfy TS
     const dates = computeBatchesDates(
       batch.week_receiving,
-      batch.chocolate_type.week_lifetime,
+      batch.products.week_lifetime ?? 0,
     );
     if (!dates) return null;
 
     return (
       <div
-        className={`bg-white rounded-2xl p-4 shadow-[0_2px_8px_-3px_rgba(62,39,35,0.04)] border transition-all ${
+        className={`bg-card rounded-2xl p-4 shadow-[0_2px_8px_-3px_rgba(62,39,35,0.04)] border transition-all ${
           isCritical
-            ? "border-red-200 bg-gradient-to-r from-red-50/30 to-white"
-            : "border-amber-900/10"
+            ? "border-red-200 bg-linear-to-r from-red-50/30 to-white"
+            : "border-slate-200"
         }`}
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h3 className="font-bold text-[#3E2723] text-sm truncate">
-              {batch.chocolate_type.name}
+              {batch.products.name}
             </h3>
-            <p className="text-[11px] font-medium text-stone-400 mt-0.5">
+            <p className="text-[11px] font-medium text-slate-400 mt-0.5">
               RÉF: {batch.reference} ·{" "}
               <span className="text-amber-900/70 font-semibold">
                 {batch.quantity} boîtes
@@ -113,14 +133,13 @@ export default function Alertes() {
             </p>
           </div>
 
-
           <span
-            className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${isCritical ? "bg-red-500 animate-pulse" : "bg-amber-500"}`}
+            className={`w-2.5 h-2.5 rounded-full mt-1.5 shrink-0 ${isCritical ? "bg-red-500 animate-pulse" : "bg-teal-500"}`}
           />
         </div>
 
-        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-stone-100/70 text-[11px] font-medium text-stone-500">
-          <span className="bg-[#FAF7F2] px-2 py-0.5 rounded border border-stone-200/40 text-stone-600">
+        <div className="flex items-center justify-between mt-3 pt-2.5 border-t border-stone-100/70 text-[11px] font-medium text-slate-500">
+          <span className="bg-app px-2 py-0.5 rounded border border-stone-200/40 text-stone-600">
             Réception Sem. {batch.week_receiving}
           </span>
           {isCritical ? (
@@ -128,7 +147,7 @@ export default function Alertes() {
               ⚠️ Retrait obligatoire ({dates.withdrawalDate})
             </span>
           ) : (
-            <span className="text-amber-800 font-semibold">
+            <span className="text-teal-700 font-semibold">
               🕐 Alerte dans {dates.weeksUntilWithdrawal} sem.
             </span>
           )}
@@ -146,19 +165,19 @@ export default function Alertes() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] pb-24 font-sans antialiased">
+    <div className="min-h-screen bg-app pb-24 font-sans antialiased">
       {/* Header Statique du Tableau de bord */}
-      <header className="bg-[#3E2723] text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
+      <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tight text-[#FFF8E1]">
+            <h1 className="text-xl font-black tracking-tight text-foam-100">
               Vue d'Ensemble
             </h1>
-            <p className="text-amber-200/60 text-xs mt-0.5 font-medium">
-              État global de la fraîcheur en boutique
+            <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
+              {shop?.name} — Fraîcheur & Alertes
             </p>
           </div>
-          <span className="text-[10px] bg-amber-700 text-[#FFF8E1] border border-amber-600 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
+          <span className="text-[10px] bg-ink-800 text-foam-100 border border-teal-500 font-bold px-2.5 py-1 rounded-full uppercase tracking-wider">
             Sem. {getCurrentWeekLabel()}
           </span>
         </div>
@@ -166,7 +185,7 @@ export default function Alertes() {
 
       {/* Les KPI (Indicateurs clés de performance) */}
       <div className="px-4 mt-5 grid grid-cols-3 gap-3">
-        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-[85px]">
+        <div className="bg-card border border-slate-200 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-21.25">
           <p className="text-[10px] uppercase font-bold text-red-500/80 tracking-wider">
             À retirer
           </p>
@@ -174,7 +193,7 @@ export default function Alertes() {
             {expired.length}
           </p>
         </div>
-        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-[85px]">
+        <div className="bg-card border border-slate-200 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-21.25">
           <p className="text-[10px] uppercase font-bold text-amber-600 tracking-wider">
             À surveiller
           </p>
@@ -182,8 +201,8 @@ export default function Alertes() {
             {warning.length}
           </p>
         </div>
-        <div className="bg-white border border-amber-900/10 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-[85px]">
-          <p className="text-[10px] uppercase font-bold text-stone-400 tracking-wider">
+        <div className="bg-card border border-slate-200 rounded-2xl p-3.5 shadow-sm flex flex-col justify-between min-h-21.25">
+          <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
             En sécurité
           </p>
           <p className="text-3xl font-black text-green-600 mt-1 leading-none">
@@ -202,12 +221,12 @@ export default function Alertes() {
             </p>
           </div>
         ) : expired.length === 0 && warning.length === 0 ? (
-          <div className="text-center py-12 bg-white rounded-2xl border border-amber-900/10 shadow-sm px-6">
+          <div className="text-center py-12 bg-card rounded-2xl border border-slate-200 shadow-sm px-6">
             <span className="text-2xl">✨</span>
             <p className="text-sm font-bold text-[#3E2723] mt-2">
               Tout est parfait !
             </p>
-            <p className="text-xs text-stone-400 mt-1">
+            <p className="text-xs text-slate-400 mt-1">
               Aucun lot ne nécessite d'action immédiate aujourd'hui.
             </p>
           </div>
@@ -237,7 +256,7 @@ export default function Alertes() {
             {warning.length > 0 && (
               <div>
                 <h2 className="text-[11px] font-bold text-amber-700 uppercase tracking-wider mb-2 px-1 flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-teal-500" />
                   Vigilance court terme ({warning.length})
                 </h2>
                 <div className="flex flex-col gap-2">
@@ -256,7 +275,7 @@ export default function Alertes() {
           <button
             onClick={() => fetchBatches(page + 1)}
             disabled={loadingMore}
-            className="w-full py-3 rounded-xl text-xs font-bold text-amber-800 bg-white border border-amber-900/10 hover:bg-amber-50 transition-all disabled:opacity-50"
+            className="w-full py-3 rounded-xl text-xs font-bold text-teal-700 bg-card border border-slate-200 hover:bg-teal-50 transition-all disabled:opacity-50"
           >
             {loadingMore ? "Chargement..." : "Charger plus"}
           </button>

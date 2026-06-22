@@ -1,11 +1,19 @@
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
+import { useShop } from "../../context/ShopContext";
+
+function getInitials(name: string): string {
+  return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
+}
 
 export default function Navbar() {
   const location = useLocation();
+  const { id } = useParams();
+  const { shop, member, user, signOut } = useShop();
+    const shopId = id || shop?.id;
 
-  const tabs = [
+  const baseTabs = [
     {
-      path: "/",
+      path: `/boutique/${shopId}`,
       label: "Suivi",
       icon: (
         <svg
@@ -25,9 +33,8 @@ export default function Navbar() {
       ),
     },
     {
-      path: "/dashboard",
+      path: `/boutique/${shopId}/dashboard`,
       label: "Dashboard",
-      // Icône Cloche / Alerte
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -46,9 +53,8 @@ export default function Navbar() {
       ),
     },
     {
-      path: "/gestion",
+      path: `/boutique/${shopId}/catalogue`,
       label: "Catalogue",
-      // Icône Grimoire / Liste de configuration
       icon: (
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -66,38 +72,80 @@ export default function Navbar() {
         </svg>
       ),
     },
-    { path: "/historique", label: "Historique", icon: "📋" },
+    { path: `/boutique/${shopId}/historique`, label: "Historique", icon: "📋" },
   ];
 
+  const equipeTab = {
+    path: `/boutique/${shopId}/equipe`,
+    label: "Équipe",
+    icon: (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        fill="none"
+        viewBox="0 0 24 24"
+        strokeWidth={2}
+        stroke="currentColor"
+        className="w-5 h-5"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.121-.952 4.125 4.125 0 0 0-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 0 1 8.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0 1 11.964-3.07M12 6.375a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0Zm8.25 2.25a2.625 2.625 0 1 1-5.25 0 2.625 2.625 0 0 1 5.25 0Z"
+        />
+      </svg>
+    ),
+  };
+
+  const tabs =
+    member?.role !== "employe" ? [...baseTabs, equipeTab] : baseTabs;
+
+  const displayName = user?.user_metadata?.display_name as string | undefined;
+
   return (
-    <nav className="fixed bottom-0 left-0 w-full bg-[#3E2723] border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe">
-      <ul className="flex justify-around items-center h-16 px-2">
+    <nav className="fixed bottom-0 left-0 w-full bg-ink-800 border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe text-foam-100">
+      {displayName && (
+        <div className="flex items-center justify-between px-4 pt-2 pb-1 border-b border-amber-900/20 min-w-0">
+          <div className="flex items-center gap-2 min-w-0 overflow-hidden">
+            <div className="w-6 h-6 rounded-full bg-teal-700/60 flex items-center justify-center text-[10px] font-black text-teal-100 shrink-0">
+              {getInitials(displayName)}
+            </div>
+            <span className="text-xs font-semibold text-foam-100/80 truncate">
+              {displayName}
+            </span>
+          </div>
+          <button
+            onClick={signOut}
+            className="shrink-0 ml-3 text-[10px] font-bold text-amber-200/40 hover:text-amber-200/70 transition-colors uppercase tracking-wider"
+          >
+            Déco.
+          </button>
+        </div>
+      )}
+      <ul className="flex items-center h-16 px-1">
         {tabs.map((tab) => {
-          const isActive = location.pathname === tab.path;
+          const isActive =
+          tab.path === `/boutique/${shopId}`
+            ? location.pathname === tab.path
+            : location.pathname.startsWith(tab.path);
 
           return (
-            <li key={tab.path} className="flex-1 max-w-[100px]">
+            <li key={tab.path} className="flex-1 min-w-0 overflow-hidden">
               <Link
                 to={tab.path}
-                className={`flex flex-col items-center justify-center gap-1 py-1.5 rounded-xl transition-all duration-200 relative ${
+                className={`flex flex-col items-center justify-center gap-0.5 py-1.5 rounded-xl transition-colors duration-200 relative w-full ${
                   isActive
-                    ? "text-[#FFF8E1] font-bold scale-105"
-                    : "text-amber-200/50 hover:text-amber-200/80 font-medium"
+                    ? "text-foam-100"
+                    : "text-amber-200/50 hover:text-amber-200/80"
                 }`}
               >
-                {/* Icône animée au clic */}
-                <span
-                  className={`transition-transform duration-200 ${isActive ? "translate-y-[-1px]" : ""}`}
-                >
+                <span className={`transition-opacity duration-200 ${isActive ? "opacity-100" : "opacity-70"}`}>
                   {tab.icon}
                 </span>
 
-                {/* Label textuel ajusté */}
-                <span className="text-[10px] tracking-wide uppercase">
+                <span className="text-[9px] tracking-wide uppercase font-semibold truncate w-full text-center px-0.5">
                   {tab.label}
                 </span>
 
-                {/* Petite puce lumineuse sous l'onglet actif */}
                 {isActive && (
                   <span className="absolute bottom-0 w-1 h-1 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24]" />
                 )}
