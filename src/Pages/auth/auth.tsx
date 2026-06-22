@@ -39,21 +39,25 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
 
   const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-      options: {
-        ...(remember && { expiresIn: 60 * 60 * 24 * 30 }),
-      },
-    } as any);
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
       setError("Email ou mot de passe incorrect.");
       return;
     }
-
     navigate("/");
+  };
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError("Entrez votre email pour recevoir un lien de réinitialisation.");
+      return;
+    }
+    await supabase.auth.resetPasswordForEmail(email.trim());
+    setError(null);
+    setInfo("Un lien de réinitialisation a été envoyé à " + email.trim());
   };
 
   const handleSignUp = async () => {
@@ -146,6 +150,7 @@ export default function Auth() {
               onClick={() => {
                 setTab(t);
                 setError(null);
+                setInfo(null);
               }}
               className={`flex-1 py-2.5 rounded-[10px] text-sm font-bold transition-all ${
                 tab === t ? "bg-card text-ink-900 shadow-sm" : "text-slate-400"
@@ -292,6 +297,7 @@ export default function Auth() {
               </label>
               <button
                 type="button"
+                onClick={handleForgotPassword}
                 className="text-sm font-bold text-teal-600 hover:text-teal-700 transition-colors"
               >
                 Mot de passe oublié ?
@@ -325,6 +331,11 @@ export default function Auth() {
             </label>
           )}
 
+          {info && (
+            <div className="bg-teal-50 border border-teal-200 rounded-xl px-4 py-3 text-sm text-teal-700 font-medium">
+              {info}
+            </div>
+          )}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 text-sm text-red-600 font-medium">
               {error}

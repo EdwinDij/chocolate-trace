@@ -5,6 +5,7 @@ import { Batch, BatchStatus } from "../../types/batch";
 import {
   computeBatchesDates,
   formatDate,
+  getCurrentWeekLabel,
   getStatusStyle,
   parseWeekLabel,
 } from "../../utils/dates";
@@ -82,15 +83,13 @@ export default function LotDetail() {
     if (!sheet || !batch) return;
 
     if (sheet === "ouvrir") {
-      const now = new Date();
-      const week = Math.ceil(
-        (now.getTime() - new Date(now.getFullYear(), 0, 1).getTime()) /
-          (7 * 86400000),
-      );
-      const weekLabel = `S${String(week).padStart(2, "0")}-${now.getFullYear()}`;
       await supabase
         .from("batches")
-        .update({ week_opening: weekLabel, status: BatchStatus.OUVERT })
+        .update({
+          week_opening: getCurrentWeekLabel(),
+          status: BatchStatus.OUVERT,
+          last_status: batch.status,
+        })
         .eq("id", batch.id);
     } else if (sheet === "supprimer") {
       await supabase.from("batches").delete().eq("id", batch.id);
@@ -147,18 +146,14 @@ export default function LotDetail() {
     batch.status !== BatchStatus.NON_CONFORME &&
     batch.status !== BatchStatus.EPUISE;
 
-  // Week labels short form e.g. "S23"
   const receivingShort = batch.week_receiving.split("-")[0];
   const expiryShort = dates?.expiryWeek.split("-")[0] ?? "—";
 
-  // Human-readable dates
   const retraitStr = batch.withdrawal_date
     ? formatDate(new Date(batch.withdrawal_date))
     : batch.expiration_date
       ? formatDate(
-          new Date(
-            new Date(batch.expiration_date).getTime() - 14 * 86400000,
-          ),
+          new Date(new Date(batch.expiration_date).getTime() - 14 * 86400000),
         )
       : dates?.withdrawalDate ?? "—";
 
@@ -181,7 +176,7 @@ export default function LotDetail() {
   return (
     <>
       <div className="min-h-screen bg-app pb-36 font-sans antialiased">
-        {/* ── Header ── */}
+        {/* Header */}
         <header className="bg-ink-800 text-white px-4 pt-10 pb-5 sticky top-0 z-10">
           <button
             onClick={() => navigate(-1)}
@@ -222,7 +217,7 @@ export default function LotDetail() {
         </header>
 
         <div className="px-4 mt-4 flex flex-col gap-3">
-          {/* ── Fraîcheur ── */}
+          {/* Fraîcheur */}
           {batch.products.week_lifetime != null && (
             <section className="bg-white rounded-2xl p-4 border border-slate-200 shadow-card">
               <p className="text-[10px] uppercase font-black tracking-widest text-amber-900/35 mb-3">
@@ -241,7 +236,7 @@ export default function LotDetail() {
             </section>
           )}
 
-          {/* ── Info grid 2×2 ── */}
+          {/* Info grid 2×2 */}
           <div className="grid grid-cols-2 gap-3">
             <InfoCard
               label="Catégorie"
@@ -262,7 +257,7 @@ export default function LotDetail() {
             <InfoCard label="Péremption" value={perimeStr} />
           </div>
 
-          {/* ── Traçabilité ── */}
+          {/* Traçabilité */}
           <section className="bg-white rounded-2xl p-4 border border-slate-200 shadow-card">
             <p className="text-[10px] uppercase font-black tracking-widest text-amber-900/35 mb-4">
               Traçabilité
@@ -296,38 +291,38 @@ export default function LotDetail() {
             </div>
           </section>
 
-          {/* ── Actions ── */}
+          {/* Actions */}
           {isActive && (
             <div className="grid grid-cols-2 gap-3">
               {batch.status === BatchStatus.STOCK && (
                 <button
                   onClick={() => setSheet("ouvrir")}
-                  className="col-span-2 min-h-13 bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
+                  className="col-span-2 min-h-[52px] bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
                 >
                   🔓 Ouvrir le lot
                 </button>
               )}
               <button
                 onClick={() => setSheet("perime")}
-                className="min-h-13 bg-red-50/70 text-red-600 border border-red-100 hover:bg-red-50 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-[52px] bg-red-50/70 text-red-600 border border-red-100 hover:bg-red-50 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Périmé
               </button>
               <button
                 onClick={() => setSheet("non_conforme")}
-                className="min-h-13 bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-[52px] bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Non conf.
               </button>
               <button
                 onClick={() => setSheet("epuise")}
-                className="min-h-13sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-[52px] bg-sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Épuisé
               </button>
               <button
                 onClick={() => navigate(-1)}
-                className="min-h-13 bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-[52px] bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Retour
               </button>
@@ -337,9 +332,18 @@ export default function LotDetail() {
           {batch.status === BatchStatus.PERIME && (
             <button
               onClick={() => setSheet("supprimer")}
-              className="w-full min-h-13 bg-red-600 text-white hover:bg-red-700 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
+              className="w-full min-h-[52px] bg-red-600 text-white hover:bg-red-700 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
             >
               🗑 Supprimer définitivement
+            </button>
+          )}
+
+          {!isActive && batch.status !== BatchStatus.PERIME && (
+            <button
+              onClick={() => navigate(-1)}
+              className="w-full min-h-[52px] bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+            >
+              Retour
             </button>
           )}
         </div>
@@ -381,15 +385,13 @@ function TimelineItem({
 }) {
   return (
     <div className="flex gap-3">
-      {/* dot + line */}
       <div className="flex flex-col items-center w-4 shrink-0">
         <div className={`w-3 h-3 rounded-full ${color} shrink-0 mt-0.5`} />
         {hasLine && (
-          <div className="w-px flex-1 bg-stone-100 mt-1 mb-1 min-h-5" />
+          <div className="w-px flex-1 bg-stone-100 mt-1 mb-1 min-h-[20px]" />
         )}
       </div>
-      {/* text */}
-      <div className={`pb-4 min-w-0 ${!hasLine ? "pb-0" : ""}`}>
+      <div className={`min-w-0 ${hasLine ? "pb-4" : "pb-0"}`}>
         <p
           className={`text-[11px] uppercase font-bold tracking-wider ${muted ? "text-slate-300" : "text-slate-400"}`}
         >

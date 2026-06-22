@@ -6,6 +6,7 @@ import { useToast } from "../../hooks/useToast";
 import { Product } from "../../types/productType";
 import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
 import { useShop } from "../../context/ShopContext";
+import BottomSheet from "../../components/BottomSheet";
 
 function endOfWeekDate(weeks: number): string {
   const d = new Date();
@@ -32,6 +33,7 @@ export default function Management() {
   const [editLifeWeeks, setEditLifeWeeks] = useState("");
 
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
 
   const { id } = useParams<{ id: string }>();
   const { shop } = useShop();
@@ -79,8 +81,10 @@ export default function Management() {
     showToast("Produit ajouté avec succès !");
   };
 
-  const deleteProduct = async (productId: string) => {
-    const { error } = await supabase.from("products").delete().eq("id", productId);
+  const deleteProduct = async () => {
+    if (!deleteTargetId) return;
+    const { error } = await supabase.from("products").delete().eq("id", deleteTargetId);
+    setDeleteTargetId(null);
     if (!error) {
       fetchProducts();
       showToast("Produit supprimé !");
@@ -240,10 +244,6 @@ export default function Management() {
               </div>
             </div>
 
-            {showBarcodeScanner && (
-              <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowBarcodeScanner(false)} />
-            )}
-
             <button
               onClick={addProduct}
               disabled={!name.trim() || !category.trim()}
@@ -338,7 +338,7 @@ export default function Management() {
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
                             <button onClick={() => startEdit(p)} className="text-amber-600 hover:text-teal-700 text-lg px-1">✏️</button>
-                            <button onClick={() => deleteProduct(p.id)} className="text-red-400 hover:text-red-600 text-lg px-1">🗑</button>
+                            <button onClick={() => setDeleteTargetId(p.id)} className="text-red-400 hover:text-red-600 text-lg px-1">🗑</button>
                           </div>
                         </div>
                       )}
@@ -354,6 +354,16 @@ export default function Management() {
       {showBarcodeScanner && (
         <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowBarcodeScanner(false)} />
       )}
+
+      <BottomSheet
+        open={!!deleteTargetId}
+        title="Supprimer ce produit ?"
+        description="Il sera retiré du catalogue. Les lots existants ne sont pas affectés."
+        confirmLabel="Supprimer"
+        confirmVariant="danger"
+        onConfirm={deleteProduct}
+        onCancel={() => setDeleteTargetId(null)}
+      />
 
       <div className="px-4 mt-8 pb-2">
         <p className="text-center text-[10px] text-amber-900/30 font-medium">© 2026 Edwin Dijeont</p>

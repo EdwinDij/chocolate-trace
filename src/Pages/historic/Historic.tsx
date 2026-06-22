@@ -182,7 +182,7 @@ export default function Historic() {
             className="w-full flex items-center justify-between px-4 py-3 bg-card rounded-2xl border border-slate-200 shadow-sm"
           >
             <div className="flex items-center gap-3">
-              <span className="text-xs font-bold text-slate-400uppercase tracking-wider">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">
                 {date}
               </span>
               <span className="text-[10px] font-bold bg-amber-100 text-teal-700 px-2 py-0.5 rounded-full">
