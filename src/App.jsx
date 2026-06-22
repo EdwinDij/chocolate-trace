@@ -11,6 +11,7 @@ import ProtectedRoute from "./components/ProtectedRoute/ProtectedRoute";
 import Boutique from "./Pages/shopDashboard/shopDashboard";
 import TeamPage from "./Pages/team/TeamPage";
 import InvitePage from "./Pages/invite/InvitePage";
+import LotDetail from "./Pages/lotDetail/LotDetail";
 import { useShop } from "./context/ShopContext";
 
 function App() {
@@ -111,6 +112,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <TeamPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/boutique/:id/lot/:batchId"
+              element={
+                <ProtectedRoute>
+                  <LotDetail />
                 </ProtectedRoute>
               }
             />
