@@ -84,7 +84,8 @@ export default function Suivi() {
       .from("batches")
       .select("*, products!product_id(name, week_lifetime, category)")
       .eq("shop_id", shopId)
-      .order("created_at", { ascending: false });
+      .order("created_at", { ascending: false })
+      .range(from, to);
     if (!error) {
       setBatches((prev) =>
         pageIndex === 0 ? data || [] : [...prev, ...(data || [])],
@@ -92,7 +93,6 @@ export default function Suivi() {
       setHasMore((data?.length ?? 0) === PAGE_SIZE);
       setPage(pageIndex);
     }
-    setLoading(false);
     if (pageIndex === 0) setLoading(false);
     else setLoadingMore(false);
   };
@@ -212,7 +212,11 @@ export default function Suivi() {
   };
 
   const deleteBatch = async (id: string) => {
-    await supabase.from("batches").delete().eq("id", id);
+    const { error } = await supabase.from("batches").delete().eq("id", id);
+    if (error) {
+      showToast("Erreur lors de la suppression.", "error");
+      return;
+    }
     showToast("Lot supprimé.");
     fetchBatches(0);
   };
@@ -284,12 +288,16 @@ export default function Suivi() {
   const undoLastAction = async (batch: Batch) => {
     if (!batch.last_status) return;
 
-    await supabase
+    const { error: updateError } = await supabase
       .from("batches")
       .update({ status: batch.last_status, last_status: null })
       .eq("id", batch.id);
 
-    // Supprime la dernière entrée historic liée
+    if (updateError) {
+      showToast("Erreur lors de l'annulation.", "error");
+      return;
+    }
+
     const { data } = await supabase
       .from("historic")
       .select("id")
