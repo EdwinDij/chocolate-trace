@@ -79,29 +79,26 @@ export default function Auth() {
       return;
     }
 
-    // Si confirmation email activée, data.session est null → on attend la session
-    // via la Edge Function qui utilise le service role pour bypasser RLS
-    const session = data.session;
-    const authHeader = session
-      ? `Bearer ${session.access_token}`
-      : null;
+    const { data: shopData, error: shopError } = await supabase
+      .from("shops")
+      .insert({ name: shop, work, plan: "gratuit", owner_id: data.user.id })
+      .select()
+      .single();
 
-    if (!authHeader) {
-      // Email confirmation requise : on informe l'utilisateur
-      setInfo("Un email de confirmation a été envoyé. Confirmez votre adresse puis reconnectez-vous.");
+    if (shopError || !shopData) {
+      setError("Erreur lors de la création de la boutique.");
       return;
     }
 
-    const { data: setupData, error: setupError } = await supabase.functions.invoke(
-      "setup-account",
-      {
-        body: { shopName: shop, work, displayName },
-        headers: { Authorization: authHeader },
-      },
-    );
+    const { error: memberError } = await supabase.from("shop_member").insert({
+      user_id: data.user.id,
+      shop_id: shopData.id,
+      role: "gerant",
+      display_name: displayName || null,
+    });
 
-    if (setupError || !setupData?.shop) {
-      setError("Erreur lors de la création de la boutique.");
+    if (memberError) {
+      setError("Erreur lors de la création du profil gérant.");
       return;
     }
 
