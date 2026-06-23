@@ -97,14 +97,28 @@ export default function Auth() {
       return;
     }
 
-    const { error: setupError } = await supabase.rpc("create_shop_for_user", {
-      p_shop_name: shop,
-      p_work: work,
-      p_display_name: displayName,
+    const userId = signInData.user.id;
+
+    const { data: shopData, error: shopError } = await supabase
+      .from("shops")
+      .insert({ name: shop, work, plan: "gratuit", owner_id: userId })
+      .select()
+      .single();
+
+    if (shopError || !shopData) {
+      setError(`Erreur boutique : ${shopError?.message ?? "inconnue"}`);
+      return;
+    }
+
+    const { error: memberError } = await supabase.from("shop_member").insert({
+      user_id: userId,
+      shop_id: shopData.id,
+      role: "gerant",
+      display_name: displayName || null,
     });
 
-    if (setupError) {
-      setError("Erreur lors de la création de la boutique.");
+    if (memberError) {
+      setError(`Erreur profil : ${memberError.message}`);
       return;
     }
 
