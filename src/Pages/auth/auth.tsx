@@ -68,7 +68,6 @@ export default function Auth() {
 
     const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
-    //créer l'utilisateur dans Supabase
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -80,36 +79,32 @@ export default function Auth() {
       return;
     }
 
-    const userId = data.user.id;
-    //créer la boutique
-    const { data: shopData, error: shopError } = await supabase
-      .from("shops")
-      .insert({
-        name: shop,
-        work: work,
-        plan: "gratuit",
-        owner_id: userId,
-      })
-      .select()
-      .single();
+    // Si confirmation email activée, data.session est null → on attend la session
+    // via la Edge Function qui utilise le service role pour bypasser RLS
+    const session = data.session;
+    const authHeader = session
+      ? `Bearer ${session.access_token}`
+      : null;
 
-    if (shopError || !shopData) {
+    if (!authHeader) {
+      // Email confirmation requise : on informe l'utilisateur
+      setInfo("Un email de confirmation a été envoyé. Confirmez votre adresse puis reconnectez-vous.");
+      return;
+    }
+
+    const { data: setupData, error: setupError } = await supabase.functions.invoke(
+      "setup-account",
+      {
+        body: { shopName: shop, work, displayName },
+        headers: { Authorization: authHeader },
+      },
+    );
+
+    if (setupError || !setupData?.shop) {
       setError("Erreur lors de la création de la boutique.");
       return;
     }
 
-    // créer le profile gérant
-    const { error: memberError } = await supabase.from("shop_member").insert({
-      user_id: userId,
-      shop_id: shopData.id,
-      role: "gerant",
-      display_name: displayName || null,
-    });
-
-    if (memberError) {
-      setError("Erreur lors de la création du profil gérant.");
-      return;
-    }
     navigate("/");
   };
 
