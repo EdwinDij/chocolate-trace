@@ -82,7 +82,6 @@ export default function Auth() {
       return;
     }
 
-    // Connexion explicite pour garantir la session avant les inserts (RLS)
     const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -93,30 +92,12 @@ export default function Auth() {
       return;
     }
 
-    const userId = signInData.user.id;
-
-    const { data: shopData, error: shopError } = await supabase
-      .from("shops")
-      .insert({ name: shop, work, plan: "gratuit", owner_id: userId })
-      .select()
-      .single();
-
-    if (shopError || !shopData) {
-      console.log(shopError, "err");
-      console.log(shopData, "data");
-      setError("Erreur lors de la création de la boutique.");
-      return;
-    }
-
-    const { error: memberError } = await supabase.from("shop_member").insert({
-      user_id: userId,
-      shop_id: shopData.id,
-      role: "gerant",
-      display_name: displayName || null,
+    const { error: setupError } = await supabase.functions.invoke("setup-account", {
+      body: { shopName: shop, work, displayName },
     });
 
-    if (memberError) {
-      setError("Erreur lors de la création du profil gérant.");
+    if (setupError) {
+      setError("Erreur lors de la création de la boutique.");
       return;
     }
 
