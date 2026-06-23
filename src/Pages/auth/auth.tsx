@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
+import { startCheckout } from "../../utils/checkout";
 import {
   Mail,
   Lock,
@@ -28,6 +29,7 @@ const allWorks = [
 
 export default function Auth() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [tab, setTab] = useState<Tab>("connexion");
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
@@ -119,6 +121,12 @@ export default function Auth() {
 
     if (memberError) {
       setError(`Erreur profil : ${memberError.message}`);
+      return;
+    }
+
+    const planParam = searchParams.get("plan");
+    if (planParam === "boutique" || planParam === "multi") {
+      await startCheckout(planParam, shopData.id);
       return;
     }
 

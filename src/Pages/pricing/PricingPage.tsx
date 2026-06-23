@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { startCheckout } from "../../utils/checkout";
-import { usePlanGate, PLAN_LIMITS } from "../../hooks/usePlanGate";
+import { startCheckout, startPortal } from "../../utils/checkout";
+import { usePlanGate } from "../../hooks/usePlanGate";
 import { useShop } from "../../context/ShopContext";
 
 const PLANS = [
@@ -37,14 +37,22 @@ const PLANS = [
 export default function PricingPage() {
   const navigate = useNavigate();
   const { shop } = useShop();
-  const { plan: currentPlan } = usePlanGate();
+  const { plan: currentPlan, isGratuit } = usePlanGate();
   const [loading, setLoading] = useState<string | null>(null);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   const handleChoose = async (planKey: "boutique" | "multi") => {
     if (!shop) return;
     setLoading(planKey);
     const ok = await startCheckout(planKey, shop.id);
     if (!ok) setLoading(null);
+  };
+
+  const handlePortal = async () => {
+    if (!shop) return;
+    setPortalLoading(true);
+    const ok = await startPortal(shop.id);
+    if (!ok) setPortalLoading(false);
   };
 
   return (
@@ -177,9 +185,19 @@ export default function PricingPage() {
           );
         })}
 
-        <p className="text-center text-[11px] text-slate-400 font-medium px-4 pb-2">
+        <p className="text-center text-[11px] text-slate-400 font-medium px-4">
           Paiement sécurisé par Stripe · Annulable à tout moment
         </p>
+
+        {!isGratuit && (
+          <button
+            onClick={handlePortal}
+            disabled={portalLoading}
+            className="w-full py-3 rounded-2xl border border-slate-200 text-slate-500 text-sm font-medium hover:bg-slate-50 transition-all disabled:opacity-50"
+          >
+            {portalLoading ? "Redirection..." : "Gérer / annuler mon abonnement"}
+          </button>
+        )}
       </div>
     </div>
   );
