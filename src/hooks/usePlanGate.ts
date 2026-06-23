@@ -10,7 +10,7 @@ export const PLAN_LIMITS: Record<Plan, {
   label: string;
 }> = {
   gratuit:  { maxShops: 1, maxProducts: 10,        emailAlerts: false, haccpExport: false, label: "Gratuit" },
-  boutique: { maxShops: 1, maxProducts: Infinity,   emailAlerts: false, haccpExport: false, label: "Boutique" },
+  boutique: { maxShops: 1, maxProducts: Infinity,   emailAlerts: false, haccpExport: true, label: "Boutique" },
   multi:    { maxShops: 5, maxProducts: Infinity,   emailAlerts: true,  haccpExport: true,  label: "Multi" },
 };
 
