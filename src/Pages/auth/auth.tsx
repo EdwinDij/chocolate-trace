@@ -71,7 +71,6 @@ export default function Auth() {
 
     const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
-    //créer l'utilisateur dans Supabase
     const { data, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
@@ -83,16 +82,9 @@ export default function Auth() {
       return;
     }
 
-    const userId = data.user.id;
-    //créer la boutique
     const { data: shopData, error: shopError } = await supabase
       .from("shops")
-      .insert({
-        name: shop,
-        work: work,
-        plan: "gratuit",
-        owner_id: userId,
-      })
+      .insert({ name: shop, work, plan: "gratuit", owner_id: data.user.id })
       .select()
       .single();
 
@@ -103,9 +95,8 @@ export default function Auth() {
       return;
     }
 
-    // créer le profile gérant
     const { error: memberError } = await supabase.from("shop_member").insert({
-      user_id: userId,
+      user_id: data.user.id,
       shop_id: shopData.id,
       role: "gerant",
       display_name: displayName || null,
@@ -115,6 +106,7 @@ export default function Auth() {
       setError("Erreur lors de la création du profil gérant.");
       return;
     }
+
     navigate("/");
   };
 
