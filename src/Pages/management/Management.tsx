@@ -6,6 +6,7 @@ import { useToast } from "../../hooks/useToast";
 import { Product } from "../../types/productType";
 import BarcodeScanner from "../../components/barcodeScanner/BarcodeScanner";
 import { useShop } from "../../context/ShopContext";
+import { usePlanGate } from "../../hooks/usePlanGate";
 import BottomSheet from "../../components/BottomSheet";
 
 function endOfWeekDate(weeks: number): string {
@@ -37,6 +38,7 @@ export default function Management() {
 
   const { id } = useParams<{ id: string }>();
   const { shop } = useShop();
+  const { canAddProduct } = usePlanGate();
   const shopId = id ?? shop?.id;
 
   const { toast, showToast, hideToast } = useToast();
@@ -59,6 +61,10 @@ export default function Management() {
   const addProduct = async (e: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
     e.preventDefault();
     if (!name.trim() || !category.trim() || !shopId) return;
+    if (!canAddProduct(products.length)) {
+      showToast("Limite de 10 produits atteinte. Passez au plan Boutique pour en ajouter plus.", "error");
+      return;
+    }
 
     const { error } = await supabase.from("products").insert({
       name: name.trim(),
