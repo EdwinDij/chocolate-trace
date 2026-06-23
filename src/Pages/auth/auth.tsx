@@ -42,7 +42,10 @@ export default function Auth() {
   const [info, setInfo] = useState<string | null>(null);
 
   const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) {
       setError("Email ou mot de passe incorrect.");
       return;
@@ -94,6 +97,8 @@ export default function Auth() {
       .single();
 
     if (shopError || !shopData) {
+      console.log(shopError, "err");
+      console.log(shopData, "data");
       setError("Erreur lors de la création de la boutique.");
       return;
     }
