@@ -71,30 +71,38 @@ export default function Auth() {
 
     const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
-    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: displayName } },
-    });
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+      {
+        email,
+        password,
+        options: { data: { display_name: displayName } },
+      },
+    );
 
     if (signUpError || !signUpData.user) {
       setError("Une erreur est survenue lors de l'inscription.");
       return;
     }
 
-    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    const { data: signInData, error: signInError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
     if (signInError || !signInData.session) {
-      setError("Compte créé mais connexion impossible. Réessayez de vous connecter.");
+      setError(
+        "Compte créé mais connexion impossible. Réessayez de vous connecter.",
+      );
       return;
     }
 
-    const { error: setupError } = await supabase.functions.invoke("setup-account", {
-      body: { shopName: shop, work, displayName },
-    });
+    const { error: setupError } = await supabase.functions.invoke(
+      "setup-account",
+      {
+        body: { shopName: shop, work, displayName },
+      },
+    );
 
     if (setupError) {
       setError("Erreur lors de la création de la boutique.");
