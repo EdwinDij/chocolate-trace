@@ -97,15 +97,28 @@ export default function Auth() {
       return;
     }
 
-    const { error: setupError } = await supabase.functions.invoke(
-      "setup-account",
-      {
-        body: { shopName: shop, work, displayName },
-      },
-    );
+    const userId = signInData.user.id;
 
-    if (setupError) {
+    const { data: shopData, error: shopError } = await supabase
+      .from("shops")
+      .insert({ name: shop, work, plan: "gratuit", owner_id: userId })
+      .select()
+      .single();
+
+    if (shopError || !shopData) {
       setError("Erreur lors de la création de la boutique.");
+      return;
+    }
+
+    const { error: memberError } = await supabase.from("shop_member").insert({
+      user_id: userId,
+      shop_id: shopData.id,
+      role: "gerant",
+      display_name: displayName || null,
+    });
+
+    if (memberError) {
+      setError("Erreur lors de la création du profil gérant.");
       return;
     }
 
