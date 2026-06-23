@@ -71,20 +71,33 @@ export default function Auth() {
 
     const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
-    const { data, error: signUpError } = await supabase.auth.signUp({
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { display_name: displayName } },
     });
 
-    if (signUpError || !data.user) {
+    if (signUpError || !signUpData.user) {
       setError("Une erreur est survenue lors de l'inscription.");
       return;
     }
 
+    // Connexion explicite pour garantir la session avant les inserts (RLS)
+    const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    if (signInError || !signInData.session) {
+      setError("Compte créé mais connexion impossible. Réessayez de vous connecter.");
+      return;
+    }
+
+    const userId = signInData.user.id;
+
     const { data: shopData, error: shopError } = await supabase
       .from("shops")
-      .insert({ name: shop, work, plan: "gratuit", owner_id: data.user.id })
+      .insert({ name: shop, work, plan: "gratuit", owner_id: userId })
       .select()
       .single();
 
@@ -96,7 +109,7 @@ export default function Auth() {
     }
 
     const { error: memberError } = await supabase.from("shop_member").insert({
-      user_id: data.user.id,
+      user_id: userId,
       shop_id: shopData.id,
       role: "gerant",
       display_name: displayName || null,
