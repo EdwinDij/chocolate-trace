@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import { useShop } from "../../context/ShopContext";
+import { usePlanGate } from "../../hooks/usePlanGate";
 import { Plus, Store, ChevronRight, Users, Package, AlertTriangle, LogOut } from "lucide-react";
 
 interface ShopSummary {
@@ -22,8 +23,10 @@ const WORKS = [
 ];
 
 export default function Dashboard() {
-  const { user, shop, shops, switchShop, signOut } = useShop();
+  const { user, shop, shops, switchShop, signOut, member } = useShop();
   const navigate = useNavigate();
+  const { canAddShop } = usePlanGate();
+  const isGerant = member?.role === "gerant";
   const [summaries, setSummaries] = useState<ShopSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -119,12 +122,15 @@ export default function Dashboard() {
             >
               <LogOut size={15} className="text-teal-300/70" />
             </button>
-            <button
-              onClick={() => setShowAddForm(!showAddForm)}
-              className="w-9 h-9 bg-teal-600 hover:bg-teal-500 rounded-full flex items-center justify-center transition-colors active:scale-95"
-            >
-              <Plus size={18} className="text-white" />
-            </button>
+            {isGerant && (
+              <button
+                onClick={() => canAddShop ? setShowAddForm(!showAddForm) : navigate("/tarifs")}
+                className="w-9 h-9 bg-teal-600 hover:bg-teal-500 rounded-full flex items-center justify-center transition-colors active:scale-95"
+                title={canAddShop ? "Ajouter une boutique" : "Limite atteinte — voir les plans"}
+              >
+                <Plus size={18} className="text-white" />
+              </button>
+            )}
           </div>
         </div>
       </header>

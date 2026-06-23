@@ -116,7 +116,7 @@ export default function Navbar() {
             </span>
           </div>
           <div className="flex items-center gap-2 shrink-0 ml-3">
-            {!canAddShop && (
+            {!canAddShop && member?.role === "gerant" && (
               <Link
                 to="/tarifs"
                 className="text-[10px] font-bold text-teal-400/80 hover:text-teal-300 transition-colors uppercase tracking-wider"
