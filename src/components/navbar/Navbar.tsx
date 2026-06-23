@@ -1,5 +1,6 @@
 import { Link, useLocation, useParams } from "react-router-dom";
 import { useShop } from "../../context/ShopContext";
+import { usePlanGate } from "../../hooks/usePlanGate";
 
 function getInitials(name: string): string {
   return name.split(" ").map((w) => w[0]).join("").toUpperCase().slice(0, 2);
@@ -100,6 +101,7 @@ export default function Navbar() {
     member?.role !== "employe" ? [...baseTabs, equipeTab] : baseTabs;
 
   const displayName = user?.user_metadata?.display_name as string | undefined;
+  const { canAddShop } = usePlanGate();
 
   return (
     <nav className="fixed bottom-0 left-0 w-full bg-ink-800 border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe text-foam-100">
@@ -113,12 +115,22 @@ export default function Navbar() {
               {displayName}
             </span>
           </div>
-          <button
-            onClick={signOut}
-            className="shrink-0 ml-3 text-[10px] font-bold text-amber-200/40 hover:text-amber-200/70 transition-colors uppercase tracking-wider"
-          >
-            Déco.
-          </button>
+          <div className="flex items-center gap-2 shrink-0 ml-3">
+            {!canAddShop && (
+              <Link
+                to="/tarifs"
+                className="text-[10px] font-bold text-teal-400/80 hover:text-teal-300 transition-colors uppercase tracking-wider"
+              >
+                Mon abonnement
+              </Link>
+            )}
+            <button
+              onClick={signOut}
+              className="text-[10px] font-bold text-amber-200/40 hover:text-amber-200/70 transition-colors uppercase tracking-wider"
+            >
+              Déco.
+            </button>
+          </div>
         </div>
       )}
       <ul className="flex items-center h-16 px-1">
