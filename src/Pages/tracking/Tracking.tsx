@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
+import { usePlanGate } from "../../hooks/usePlanGate";
 import {
   computeBatchesDates,
   computeStatusFromDates,
@@ -50,9 +51,12 @@ export default function Suivi() {
   const [search, setSearch] = useState("");
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
+  const [showCheckoutSuccess, setShowCheckoutSuccess] = useState(false);
+
   const { id } = useParams<{ id: string }>();
   const [searchParams, setSearchParams] = useSearchParams();
   const { shop } = useShop();
+  const { plan } = usePlanGate();
   const shopId = id ?? shop?.id;
 
   useEffect(() => {
@@ -64,8 +68,9 @@ export default function Suivi() {
 
   useEffect(() => {
     if (searchParams.get("checkout") === "success") {
-      showToast("🎉 Abonnement activé ! Bienvenue sur Tracéo.");
+      setShowCheckoutSuccess(true);
       setSearchParams({});
+      setTimeout(() => setShowCheckoutSuccess(false), 5000);
     }
   }, []);
 
@@ -321,6 +326,30 @@ export default function Suivi() {
   };
   return (
     <div className="min-h-screen bg-app pb-36 font-sans antialiased">
+
+      {showCheckoutSuccess && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-6">
+          <div className="bg-white rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl max-w-xs w-full">
+            <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-4">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-teal-600">
+                <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-black text-slate-800 mb-1">Abonnement activé !</h2>
+            <p className="text-sm text-slate-500 mb-1">
+              Plan <span className="font-bold text-teal-600 capitalize">{plan}</span> actif sur {shop?.name}
+            </p>
+            <p className="text-xs text-slate-400 mb-6">Toutes les fonctionnalités sont débloquées.</p>
+            <button
+              onClick={() => setShowCheckoutSuccess(false)}
+              className="w-full bg-ink-800 text-white font-bold py-3 rounded-2xl text-sm active:scale-95 transition-all"
+            >
+              Commencer
+            </button>
+          </div>
+        </div>
+      )}
+
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
           <div>
