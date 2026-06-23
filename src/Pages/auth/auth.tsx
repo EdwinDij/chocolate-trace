@@ -42,7 +42,10 @@ export default function Auth() {
   const [info, setInfo] = useState<string | null>(null);
 
   const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
     if (error) {
       setError("Email ou mot de passe incorrect.");
       return;
@@ -68,48 +71,43 @@ export default function Auth() {
 
     const displayName = `${firstName.trim()} ${lastName.trim()}`.trim();
 
-    //créer l'utilisateur dans Supabase
-    const { data, error: signUpError } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: displayName } },
-    });
+    const { data: signUpData, error: signUpError } = await supabase.auth.signUp(
+      {
+        email,
+        password,
+        options: { data: { display_name: displayName } },
+      },
+    );
 
-    if (signUpError || !data.user) {
+    if (signUpError || !signUpData.user) {
       setError("Une erreur est survenue lors de l'inscription.");
       return;
     }
 
-    const userId = data.user.id;
-    //créer la boutique
-    const { data: shopData, error: shopError } = await supabase
-      .from("shops")
-      .insert({
-        name: shop,
-        work: work,
-        plan: "gratuit",
-        owner_id: userId,
-      })
-      .select()
-      .single();
+    const { data: signInData, error: signInError } =
+      await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
 
-    if (shopError || !shopData) {
+    if (signInError || !signInData.session) {
+      setError(
+        "Compte créé mais connexion impossible. Réessayez de vous connecter.",
+      );
+      return;
+    }
+
+    const { error: setupError } = await supabase.rpc("create_shop_for_user", {
+      p_shop_name: shop,
+      p_work: work,
+      p_display_name: displayName,
+    });
+
+    if (setupError) {
       setError("Erreur lors de la création de la boutique.");
       return;
     }
 
-    // créer le profile gérant
-    const { error: memberError } = await supabase.from("shop_member").insert({
-      user_id: userId,
-      shop_id: shopData.id,
-      role: "gerant",
-      display_name: displayName || null,
-    });
-
-    if (memberError) {
-      setError("Erreur lors de la création du profil gérant.");
-      return;
-    }
     navigate("/");
   };
 
