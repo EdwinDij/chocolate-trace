@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import {
   computeBatchesDates,
@@ -51,6 +51,7 @@ export default function Suivi() {
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
 
   const { id } = useParams<{ id: string }>();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { shop } = useShop();
   const shopId = id ?? shop?.id;
 
@@ -60,6 +61,13 @@ export default function Suivi() {
       fetchProducts();
     }
   }, [shopId]);
+
+  useEffect(() => {
+    if (searchParams.get("checkout") === "success") {
+      showToast("🎉 Abonnement activé ! Bienvenue sur Tracéo.");
+      setSearchParams({});
+    }
+  }, []);
 
   useEffect(() => {
     const product = products.find((p) => p.id === typeId);
