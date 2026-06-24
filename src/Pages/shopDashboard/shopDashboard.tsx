@@ -32,7 +32,8 @@ export default function Dashboard() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newShopName, setNewShopName] = useState("");
   const [newShopWork, setNewShopWork] = useState("");
-  const [adding, setAdding] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (shops.length > 0) loadSummaries();
@@ -98,6 +99,16 @@ export default function Dashboard() {
   const handleSignOut = async () => {
     await signOut();
     navigate("/auth");
+  };
+
+  const handleDeleteAccount = async () => {
+    setDeleting(true);
+    const { error } = await supabase.functions.invoke("delete-account");
+    if (!error) {
+      await signOut();
+      navigate("/auth");
+    }
+    setDeleting(false);
   };
 
   return (
@@ -256,7 +267,42 @@ export default function Dashboard() {
             );
           })
         )}
+        {/* Zone danger */}
+        <div className="mt-6 border-t border-slate-100 pt-5">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="text-xs text-slate-400 hover:text-red-500 transition-colors font-medium underline underline-offset-2"
+          >
+            Supprimer mon compte
+          </button>
+        </div>
       </div>
+
+      {/* Modale confirmation suppression */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
+          <div className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4">
+            <h2 className="text-lg font-black text-slate-800">Supprimer mon compte ?</h2>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Cette action est <strong>irréversible</strong>. Toutes vos boutiques, lots et données seront supprimés.
+              {" "}Si vous avez un abonnement actif, il sera automatiquement résilié.
+            </p>
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleting}
+              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-2xl text-sm transition-all active:scale-95 disabled:opacity-50"
+            >
+              {deleting ? "Suppression en cours..." : "Oui, supprimer définitivement"}
+            </button>
+            <button
+              onClick={() => setShowDeleteConfirm(false)}
+              className="w-full text-slate-500 font-bold py-2.5 text-sm"
+            >
+              Annuler
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
