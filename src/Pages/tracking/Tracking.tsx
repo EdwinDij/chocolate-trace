@@ -328,7 +328,7 @@ export default function Suivi() {
     <div className="min-h-screen bg-app pb-36 font-sans antialiased">
 
       {showCheckoutSuccess && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 px-6">
+        <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 px-6">
           <div className="bg-white rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl max-w-xs w-full">
             <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-4">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-teal-600">
