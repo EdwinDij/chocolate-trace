@@ -152,7 +152,7 @@ export default function Auth() {
       {/* Header */}
       <div className="flex flex-col items-center pt-16 pb-10 px-4">
         <div className="w-14 h-14 bg-teal-900 border border-teal-700 rounded-2xl flex items-center justify-center mb-4">
-          <span className="text-teal-300 text-2xl font-black">T.</span>
+          <img src="/icon-192.png"></img>
         </div>
         <h1 className="text-white text-2xl font-black tracking-tight">
           Tracéo
