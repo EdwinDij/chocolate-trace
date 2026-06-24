@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "../../utils/supabase";
 import { useShop } from "../../context/ShopContext";
 import { usePlanGate } from "../../hooks/usePlanGate";
-import { Plus, Store, ChevronRight, Users, Package, AlertTriangle, LogOut } from "lucide-react";
+import { Plus, Store, ChevronRight, Users, Package, AlertTriangle } from "lucide-react";
 
 interface ShopSummary {
   id: string;
@@ -23,7 +23,7 @@ const WORKS = [
 ];
 
 export default function Dashboard() {
-  const { user, shop, shops, switchShop, signOut, member } = useShop();
+  const { user, shop, shops, switchShop, member } = useShop();
   const navigate = useNavigate();
   const { canAddShop } = usePlanGate();
   const isGerant = member?.role === "gerant";
@@ -32,8 +32,6 @@ export default function Dashboard() {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newShopName, setNewShopName] = useState("");
   const [newShopWork, setNewShopWork] = useState("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (shops.length > 0) loadSummaries();
@@ -91,24 +89,9 @@ export default function Dashboard() {
     setLoading(false);
   };
 
- const handleSwitch = (shopId: string) => {
-  switchShop(shopId);
-  navigate(`/boutique/${shopId}`);
-};
-
-  const handleSignOut = async () => {
-    await signOut();
-    navigate("/auth");
-  };
-
-  const handleDeleteAccount = async () => {
-    setDeleting(true);
-    const { error } = await supabase.functions.invoke("delete-account");
-    if (!error) {
-      await signOut();
-      navigate("/auth");
-    }
-    setDeleting(false);
+  const handleSwitch = (shopId: string) => {
+    switchShop(shopId);
+    navigate(`/boutique/${shopId}`);
   };
 
   return (
@@ -125,24 +108,15 @@ export default function Dashboard() {
               {shops.length} établissement{shops.length > 1 ? "s" : ""}
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          {isGerant && (
             <button
-              onClick={handleSignOut}
-              className="w-9 h-9 bg-ink-900 hover:bg-ink-700 rounded-full flex items-center justify-center transition-colors active:scale-95"
-              title="Se déconnecter"
+              onClick={() => canAddShop ? setShowAddForm(!showAddForm) : navigate("/tarifs")}
+              className="w-9 h-9 bg-teal-600 hover:bg-teal-500 rounded-full flex items-center justify-center transition-colors active:scale-95"
+              title={canAddShop ? "Ajouter une boutique" : "Limite atteinte — voir les plans"}
             >
-              <LogOut size={15} className="text-teal-300/70" />
+              <Plus size={18} className="text-white" />
             </button>
-            {isGerant && (
-              <button
-                onClick={() => canAddShop ? setShowAddForm(!showAddForm) : navigate("/tarifs")}
-                className="w-9 h-9 bg-teal-600 hover:bg-teal-500 rounded-full flex items-center justify-center transition-colors active:scale-95"
-                title={canAddShop ? "Ajouter une boutique" : "Limite atteinte — voir les plans"}
-              >
-                <Plus size={18} className="text-white" />
-              </button>
-            )}
-          </div>
+          )}
         </div>
       </header>
 
@@ -267,42 +241,7 @@ export default function Dashboard() {
             );
           })
         )}
-        {/* Zone danger */}
-        <div className="mt-6 border-t border-slate-100 pt-5">
-          <button
-            onClick={() => setShowDeleteConfirm(true)}
-            className="text-xs text-slate-400 hover:text-red-500 transition-colors font-medium underline underline-offset-2"
-          >
-            Supprimer mon compte
-          </button>
-        </div>
       </div>
-
-      {/* Modale confirmation suppression */}
-      {showDeleteConfirm && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
-          <div className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4">
-            <h2 className="text-lg font-black text-slate-800">Supprimer mon compte ?</h2>
-            <p className="text-sm text-slate-500 leading-relaxed">
-              Cette action est <strong>irréversible</strong>. Toutes vos boutiques, lots et données seront supprimés.
-              {" "}Si vous avez un abonnement actif, il sera automatiquement résilié.
-            </p>
-            <button
-              onClick={handleDeleteAccount}
-              disabled={deleting}
-              className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-2xl text-sm transition-all active:scale-95 disabled:opacity-50"
-            >
-              {deleting ? "Suppression en cours..." : "Oui, supprimer définitivement"}
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(false)}
-              className="w-full text-slate-500 font-bold py-2.5 text-sm"
-            >
-              Annuler
-            </button>
-          </div>
-        </div>
-      )}
     </div>
   );
 }
