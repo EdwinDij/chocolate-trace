@@ -13,6 +13,7 @@ import TeamPage from "./Pages/team/TeamPage";
 import InvitePage from "./Pages/invite/InvitePage";
 import LotDetail from "./Pages/lotDetail/LotDetail";
 import PricingPage from "./Pages/pricing/PricingPage";
+import SettingsPage from "./Pages/settings/SettingsPage";
 import { useShop } from "./context/ShopContext";
 
 function App() {
@@ -129,6 +130,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <PricingPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/boutique/:id/parametres"
+              element={
+                <ProtectedRoute>
+                  <SettingsPage />
                 </ProtectedRoute>
               }
             />
