@@ -71,7 +71,7 @@ export default function Dashboard() {
 
   const addShop = async () => {
     if (!newShopName.trim() || !newShopWork || !user) return;
-    setAdding(true);
+    setLoading(true);
     const { data: shopData, error } = await supabase
       .from("shops")
       .insert({ name: newShopName.trim(), work: newShopWork, plan: "gratuit", owner_id: user.id })
@@ -88,7 +88,7 @@ export default function Dashboard() {
       setShowAddForm(false);
       window.location.reload();
     }
-    setAdding(false);
+    setLoading(false);
   };
 
  const handleSwitch = (shopId: string) => {
@@ -184,10 +184,10 @@ export default function Dashboard() {
               </div>
               <button
                 onClick={addShop}
-                disabled={adding || !newShopName.trim() || !newShopWork}
+                disabled={loading || !newShopName.trim() || !newShopWork}
                 className="w-full bg-ink-800 hover:bg-ink-900 text-white font-bold py-3 rounded-xl text-sm transition-all disabled:opacity-40 active:scale-95"
               >
-                {adding ? "Création..." : "Créer la boutique"}
+                {loading ? "Création..." : "Créer la boutique"}
               </button>
             </div>
           </div>
@@ -280,35 +280,23 @@ export default function Dashboard() {
 
       {/* Modale confirmation suppression */}
       {showDeleteConfirm && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-5"
-          onClick={() => setShowDeleteConfirm(false)}
-        >
-          <div
-            className="bg-white w-full max-w-sm rounded-3xl p-6 flex flex-col gap-4 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="w-12 h-12 bg-red-100 rounded-2xl flex items-center justify-center mx-auto">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-red-600">
-                <path fillRule="evenodd" d="M9.401 3.003c1.155-2 4.043-2 5.197 0l7.355 12.748c1.154 2-.29 4.5-2.599 4.5H4.645c-2.309 0-3.752-2.5-2.598-4.5L9.4 3.003ZM12 8.25a.75.75 0 0 1 .75.75v3.75a.75.75 0 0 1-1.5 0V9a.75.75 0 0 1 .75-.75Zm0 8.25a.75.75 0 1 0 0-1.5.75.75 0 0 0 0 1.5Z" clipRule="evenodd" />
-              </svg>
-            </div>
-            <div className="text-center">
-              <h2 className="text-lg font-black text-slate-800 mb-1">Supprimer mon compte ?</h2>
-              <p className="text-sm text-slate-500 leading-relaxed">
-                Action <strong className="text-red-600">irréversible</strong>. Toutes vos boutiques, lots et données seront supprimés. Votre abonnement Stripe sera automatiquement résilié.
-              </p>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50">
+          <div className="bg-white w-full max-w-md rounded-t-3xl p-6 flex flex-col gap-4">
+            <h2 className="text-lg font-black text-slate-800">Supprimer mon compte ?</h2>
+            <p className="text-sm text-slate-500 leading-relaxed">
+              Cette action est <strong>irréversible</strong>. Toutes vos boutiques, lots et données seront supprimés.
+              {" "}Si vous avez un abonnement actif, il sera automatiquement résilié.
+            </p>
             <button
               onClick={handleDeleteAccount}
               disabled={deleting}
               className="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-3.5 rounded-2xl text-sm transition-all active:scale-95 disabled:opacity-50"
             >
-              {deleting ? "Suppression en cours..." : "Supprimer définitivement"}
+              {deleting ? "Suppression en cours..." : "Oui, supprimer définitivement"}
             </button>
             <button
               onClick={() => setShowDeleteConfirm(false)}
-              className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-3.5 rounded-2xl text-sm transition-all active:scale-95"
+              className="w-full text-slate-500 font-bold py-2.5 text-sm"
             >
               Annuler
             </button>
