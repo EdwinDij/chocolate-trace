@@ -4,6 +4,7 @@ import { supabase } from "../../utils/supabase";
 import { useShop } from "../../context/ShopContext";
 import Toast from "../../components/Toast";
 import { useToast } from "../../hooks/useToast";
+import { X } from "lucide-react";
 
 interface Member {
   id: string;
@@ -48,6 +49,8 @@ export default function TeamPage() {
   const [inviteLink, setInviteLink] = useState<string | null>(null);
   const [generatingLink, setGeneratingLink] = useState(false);
   const [promoting, setPromoting] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<string | null>(null);
+  const [confirmRemove, setConfirmRemove] = useState<string | null>(null);
 
   const isGerant = currentMember?.role === "gerant";
   const canManage = isGerant || currentMember?.role === "responsable";
@@ -73,7 +76,6 @@ export default function TeamPage() {
     if (!error) {
       setMembers(sort(data || []));
     } else {
-      // fallback si la colonne display_name n'existe pas encore
       const { data: fallback } = await supabase
         .from("shop_member")
         .select("id, user_id, role")
@@ -96,6 +98,30 @@ export default function TeamPage() {
       showToast("Erreur lors de la promotion", "error");
     }
     setPromoting(null);
+  };
+
+  const removeMember = async (memberId: string) => {
+    setRemoving(memberId);
+    const { error } = await supabase
+      .from("shop_member")
+      .delete()
+      .eq("id", memberId);
+    if (!error) {
+      showToast("Membre retiré de l'équipe");
+      fetchMembers();
+    } else {
+      showToast("Erreur lors de la suppression", "error");
+    }
+    setRemoving(null);
+    setConfirmRemove(null);
+  };
+
+  const canRemoveMember = (m: Member): boolean => {
+    if (m.user_id === currentMember?.user_id) return false;
+    if (m.role === "gerant") return false;
+    if (isGerant) return true;
+    if (currentMember?.role === "responsable" && m.role === "employe") return true;
+    return false;
   };
 
   const generateInviteLink = async () => {
@@ -134,6 +160,7 @@ export default function TeamPage() {
     const name = m.display_name ?? `Membre ${m.user_id.slice(0, 8)}`;
     const badge = roleBadge(m.role);
     const isEmployee = m.role === "employe";
+    const showConfirm = confirmRemove === m.id;
 
     return (
       <li className="bg-card rounded-2xl px-4 py-3.5 shadow-sm border border-stone-200 flex items-center gap-3">
@@ -152,26 +179,49 @@ export default function TeamPage() {
           </span>
         </div>
 
-        {canManage && isEmployee && (
-          <button
-            onClick={() => promoteToResponsable(m.id)}
-            disabled={promoting === m.id}
-            className="shrink-0 text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
-          >
-            {promoting === m.id ? "..." : "Promouvoir"}
-          </button>
+        {showConfirm ? (
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => setConfirmRemove(null)}
+              className="text-xs text-slate-400 font-medium hover:text-slate-600 transition-colors"
+            >
+              Annuler
+            </button>
+            <button
+              onClick={() => removeMember(m.id)}
+              disabled={removing === m.id}
+              className="text-xs font-bold text-white bg-red-500 hover:bg-red-600 px-3 py-1.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
+            >
+              {removing === m.id ? "..." : "Confirmer"}
+            </button>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 shrink-0">
+            {canManage && isEmployee && (
+              <button
+                onClick={() => promoteToResponsable(m.id)}
+                disabled={promoting === m.id}
+                className="text-xs font-semibold text-teal-700 bg-teal-50 border border-teal-200 px-3 py-1.5 rounded-xl active:scale-95 transition-all disabled:opacity-50"
+              >
+                {promoting === m.id ? "..." : "Promouvoir"}
+              </button>
+            )}
+            {canRemoveMember(m) && (
+              <button
+                onClick={() => setConfirmRemove(m.id)}
+                className="w-8 h-8 flex items-center justify-center rounded-xl bg-red-50 border border-red-200 text-red-400 hover:text-red-600 hover:bg-red-100 active:scale-95 transition-all"
+                title="Retirer de l'équipe"
+              >
+                <X size={14} />
+              </button>
+            )}
+          </div>
         )}
       </li>
     );
   };
 
-  const Section = ({
-    title,
-    list,
-  }: {
-    title: string;
-    list: Member[];
-  }) => {
+  const Section = ({ title, list }: { title: string; list: Member[] }) => {
     if (list.length === 0) return null;
     return (
       <div className="mb-5">
