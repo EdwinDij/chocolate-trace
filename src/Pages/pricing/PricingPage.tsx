@@ -36,7 +36,7 @@ const PLANS = [
 
 export default function PricingPage() {
   const navigate = useNavigate();
-  const { shop } = useShop();
+  const { shop, user } = useShop();
   const { plan: currentPlan, isGratuit } = usePlanGate();
   const [loading, setLoading] = useState<string | null>(null);
   const [portalLoading, setPortalLoading] = useState(false);
@@ -44,14 +44,13 @@ export default function PricingPage() {
   const handleChoose = async (planKey: "boutique" | "multi") => {
     if (!shop) return;
     setLoading(planKey);
-    const ok = await startCheckout(planKey, shop.id);
+    const ok = await startCheckout(planKey);
     if (!ok) setLoading(null);
   };
 
   const handlePortal = async () => {
-    if (!shop) return;
     setPortalLoading(true);
-    const ok = await startPortal(shop.id);
+    const ok = await startPortal(`${window.location.origin}/tarifs`);
     if (!ok) setPortalLoading(false);
   };
 
@@ -70,7 +69,11 @@ export default function PricingPage() {
             stroke="currentColor"
             className="w-3.5 h-3.5"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M15.75 19.5 8.25 12l7.5-7.5"
+            />
           </svg>
           Retour
         </button>
@@ -195,7 +198,9 @@ export default function PricingPage() {
             disabled={portalLoading}
             className="w-full py-3 rounded-2xl border border-slate-200 text-slate-500 text-sm font-medium hover:bg-slate-50 transition-all disabled:opacity-50"
           >
-            {portalLoading ? "Redirection..." : "Gérer / annuler mon abonnement"}
+            {portalLoading
+              ? "Redirection..."
+              : "Gérer / annuler mon abonnement"}
           </button>
         )}
       </div>

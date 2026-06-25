@@ -1,12 +1,12 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { supabase } from "../utils/supabase";
 import type { User } from "@supabase/supabase-js";
+import type { Plan } from "../hooks/usePlanGate";
 
 interface Shop {
   id: string;
   name: string;
   work: string;
-  plan: string;
   owner_id: string;
 }
 
@@ -20,6 +20,7 @@ interface ShopContextType {
   shop: Shop | null;
   member: ShopMember | null;
   shops: Shop[];
+  plan: Plan;
   loading: boolean;
   switchShop: (shopId: string) => void;
   signOut: () => Promise<void>;
@@ -32,6 +33,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [shop, setShop] = useState<Shop | null>(null);
   const [member, setMember] = useState<ShopMember | null>(null);
   const [shops, setShops] = useState<Shop[]>([]);
+  const [plan, setPlan] = useState<Plan>("gratuit");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -44,9 +46,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
         loadShops(session.user.id);
@@ -55,6 +55,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         setShop(null);
         setMember(null);
         setShops([]);
+        setPlan("gratuit");
         setLoading(false);
       }
     });
@@ -64,11 +65,22 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   const loadShops = async (userId: string) => {
     try {
+      // 1. Charge le plan depuis subscriptions
+      const { data: subData } = await supabase
+        .from("subscriptions")
+        .select("plan")
+        .eq("user_id", userId)
+        .single();
+
+      if (subData?.plan) setPlan(subData.plan as Plan);
+
+      // 2. Charge les boutiques owned
       const { data: ownedShops } = await supabase
         .from("shops")
-        .select("*")
+        .select("id, name, work, owner_id")
         .eq("owner_id", userId);
 
+      // 3. Charge les boutiques membre
       const { data: memberData } = await supabase
         .from("shop_member")
         .select("shop_id, role")
@@ -80,7 +92,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       if (memberShopIds.length > 0) {
         const { data } = await supabase
           .from("shops")
-          .select("*")
+          .select("id, name, work, owner_id")
           .in("id", memberShopIds);
         memberShops = data || [];
       }
@@ -129,7 +141,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ShopContext.Provider
-      value={{ user, shop, member, shops, loading, switchShop, signOut }}
+      value={{ user, shop, member, shops, plan, loading, switchShop, signOut }}
     >
       {children}
     </ShopContext.Provider>

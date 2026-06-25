@@ -5,6 +5,7 @@ import { BatchStatus } from "../../types/batch";
 import { useShop } from "../../context/ShopContext";
 import { exportToCSV, exportToPDF } from "../../utils/export";
 import { Download } from "lucide-react";
+import { usePlanGate } from "../../hooks/usePlanGate";
 
 interface HistoricEntry {
   id: string;
@@ -54,11 +55,11 @@ export default function Historic() {
   });
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
-
+  const { isGratuit } = usePlanGate();
   const { id } = useParams<{ id: string }>();
   const { shop, member } = useShop();
   const shopId = id ?? shop?.id;
-  const canExport = member?.role !== undefined && shop?.plan !== "gratuit";
+  const canExport = member?.role !== undefined && !isGratuit;
 
   const toggleGroup = (date: string) => {
     setOpenGroups((prev) => ({ ...prev, [date]: !prev[date] }));

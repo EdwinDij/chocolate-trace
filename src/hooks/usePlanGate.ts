@@ -17,8 +17,7 @@ export const PLAN_LIMITS: Record<Plan, {
 const PLAN_RANK: Record<Plan, number> = { gratuit: 0, boutique: 1, multi: 2 };
 
 export function usePlanGate() {
-  const { shop, shops } = useShop();
-  const plan = ((shop?.plan as Plan) ?? "gratuit");
+  const { plan, shops } = useShop(); // ← plan vient du contexte
   const limits = PLAN_LIMITS[plan] ?? PLAN_LIMITS.gratuit;
 
   return {

@@ -124,9 +124,19 @@ export default function Auth() {
       return;
     }
 
+    const { error: subError } = await supabase.from("subscriptions").insert({
+      user_id: userId,
+      plan: "gratuit",
+    });
+
+    if (subError) {
+      setError(`Erreur subscription : ${subError.message}`);
+      return;
+    }
+
     const planParam = searchParams.get("plan");
     if (planParam === "boutique" || planParam === "multi") {
-      await startCheckout(planParam, shopData.id);
+      await startCheckout(planParam);
       return;
     }
 
