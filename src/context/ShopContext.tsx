@@ -8,6 +8,7 @@ interface Shop {
   name: string;
   work: string;
   owner_id: string;
+  onboarded: boolean;
 }
 
 interface ShopMember {
@@ -22,6 +23,8 @@ interface ShopContextType {
   shops: Shop[];
   plan: Plan;
   loading: boolean;
+  onboarded: boolean;
+  refreshShop: () => Promise<void>;
   switchShop: (shopId: string) => void;
   signOut: () => Promise<void>;
 }
@@ -35,6 +38,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [shops, setShops] = useState<Shop[]>([]);
   const [plan, setPlan] = useState<Plan>("gratuit");
   const [loading, setLoading] = useState(true);
+  const [onboarded, setOnboarded] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -46,7 +50,9 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
         loadShops(session.user.id);
@@ -77,7 +83,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       // 2. Charge les boutiques owned
       const { data: ownedShops } = await supabase
         .from("shops")
-        .select("id, name, work, owner_id")
+        .select("id, name, work, owner_id, onboarded")
         .eq("owner_id", userId);
 
       // 3. Charge les boutiques membre
@@ -92,7 +98,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       if (memberShopIds.length > 0) {
         const { data } = await supabase
           .from("shops")
-          .select("id, name, work, owner_id")
+          .select("id, name, work, owner_id, onboarded")
           .in("id", memberShopIds);
         memberShops = data || [];
       }
@@ -138,10 +144,29 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
   };
-
+  const refreshShop = async () => {
+    if (!shop || !user) return;
+    const { data } = await supabase
+      .from("shops")
+      .select("id, name, work, owner_id, onboarded")
+      .eq("id", shop.id)
+      .single();
+    if (data) setShop(data);
+  };
   return (
     <ShopContext.Provider
-      value={{ user, shop, member, shops, plan, loading, switchShop, signOut }}
+      value={{
+        user,
+        shop,
+        member,
+        shops,
+        plan,
+        loading,
+        switchShop,
+        signOut,
+        onboarded,
+        refreshShop,
+      }}
     >
       {children}
     </ShopContext.Provider>
