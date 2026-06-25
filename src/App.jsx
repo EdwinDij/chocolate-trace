@@ -15,6 +15,7 @@ import LotDetail from "./Pages/lotDetail/LotDetail";
 import PricingPage from "./Pages/pricing/PricingPage";
 import SettingsPage from "./Pages/settings/SettingsPage";
 import { useShop } from "./context/ShopContext";
+import Welcome from "./Pages/welcome/welcomePage";
 
 function App() {
   // console.log(computeBatchesDates("S21-2025", 5));
@@ -138,6 +139,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <SettingsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/welcome"
+              element={
+                <ProtectedRoute>
+                  <Welcome />
                 </ProtectedRoute>
               }
             />

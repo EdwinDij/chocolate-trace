@@ -140,7 +140,7 @@ export default function Auth() {
       return;
     }
 
-    navigate("/");
+    navigate("/welcome");
   };
 
   const handleSubmit = async (e: React.FormEvent) => {

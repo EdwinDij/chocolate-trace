@@ -1,8 +1,13 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useShop } from "../../context/ShopContext";
 
-export default function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useShop();
+export default function ProtectedRoute({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const { user, shop, loading } = useShop();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -13,6 +18,21 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
   }
 
   if (!user) return <Navigate to="/auth" replace />;
+
+  const onboardingAllowedPaths = [
+    "/welcome",
+    `/boutique/${shop?.id}/catalogue`,
+    `/boutique/${shop?.id}`,
+    `/boutique/${shop?.id}/equipe`,
+  ];
+
+  const isOnboardingPath = onboardingAllowedPaths.some(
+    (p) => location.pathname === p,
+  );
+
+  if (shop && !shop.onboarded && !isOnboardingPath) {
+    return <Navigate to="/welcome" replace />;
+  }
 
   return <>{children}</>;
 }
