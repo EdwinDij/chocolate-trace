@@ -23,6 +23,7 @@ interface ShopContextType {
   shops: Shop[];
   plan: Plan;
   loading: boolean;
+  error: string | null; // ← nouveau
   refreshShop: () => Promise<void>;
   switchShop: (shopId: string) => void;
   signOut: () => Promise<void>;
@@ -37,6 +38,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [shops, setShops] = useState<Shop[]>([]);
   const [plan, setPlan] = useState<Plan>("gratuit");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null); // ← nouveau
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -48,9 +50,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       if (session?.user) {
         setUser(session.user);
         loadShops(session.user.id);
@@ -60,6 +60,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         setMember(null);
         setShops([]);
         setPlan("gratuit");
+        setError(null);
         setLoading(false);
       }
     });
@@ -69,35 +70,47 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   const loadShops = async (userId: string) => {
     try {
+      setError(null);
+
       // 1. Charge le plan depuis subscriptions
-      const { data: subData } = await supabase
+      const { data: subData, error: subError } = await supabase
         .from("subscriptions")
         .select("plan")
         .eq("user_id", userId)
         .single();
 
+      if (subError && subError.code !== "PGRST116") {
+        // PGRST116 = no rows found, pas une vraie erreur
+        console.warn("Erreur subscription:", subError);
+      }
       if (subData?.plan) setPlan(subData.plan as Plan);
 
       // 2. Charge les boutiques owned
-      const { data: ownedShops } = await supabase
+      const { data: ownedShops, error: ownedError } = await supabase
         .from("shops")
         .select("id, name, work, owner_id, onboarded")
         .eq("owner_id", userId);
 
+      if (ownedError) throw new Error("Impossible de charger vos boutiques.");
+
       // 3. Charge les boutiques membre
-      const { data: memberData } = await supabase
+      const { data: memberData, error: memberError } = await supabase
         .from("shop_member")
         .select("shop_id, role")
         .eq("user_id", userId);
+
+      if (memberError) throw new Error("Impossible de charger vos accès.");
 
       const memberShopIds = memberData?.map((m) => m.shop_id) || [];
 
       let memberShops: Shop[] = [];
       if (memberShopIds.length > 0) {
-        const { data } = await supabase
+        const { data, error: memberShopsError } = await supabase
           .from("shops")
           .select("id, name, work, owner_id, onboarded")
           .in("id", memberShopIds);
+
+        if (memberShopsError) throw new Error("Impossible de charger vos boutiques membre.");
         memberShops = data || [];
       }
 
@@ -109,9 +122,17 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
       setShops(allShops);
 
-      if (allShops.length > 0) {
-        await selectShop(userId, allShops[0]);
+      if (allShops.length === 0) {
+        setError("Aucune boutique trouvée. Veuillez contacter le support ou recréer un compte.");
+        return;
       }
+
+      await selectShop(userId, allShops[0]);
+
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erreur de connexion au serveur.";
+      setError(message);
+      console.error("loadShops error:", err);
     } finally {
       setLoading(false);
     }
@@ -142,6 +163,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
   };
+
   const refreshShop = async () => {
     if (!shop || !user) return;
     const { data } = await supabase
@@ -151,6 +173,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       .single();
     if (data) setShop(data);
   };
+
   return (
     <ShopContext.Provider
       value={{
@@ -160,6 +183,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         shops,
         plan,
         loading,
+        error,
         switchShop,
         signOut,
         refreshShop,

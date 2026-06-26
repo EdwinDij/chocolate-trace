@@ -282,7 +282,7 @@ export default function Management() {
               />
               {lifeWeeks && parseInt(lifeWeeks) > 0 && (
                 <p className="text-xs text-teal-600 font-medium mt-1 px-1">
-                  → Fin de semaine estimée :{" "}
+                  Fin de semaine estimée :{" "}
                   {endOfWeekDate(parseInt(lifeWeeks))}
                 </p>
               )}

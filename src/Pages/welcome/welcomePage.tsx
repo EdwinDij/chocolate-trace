@@ -231,7 +231,7 @@ export default function Welcome() {
           ) : completedCount === steps.length ? (
             "🎉 Commencer à tracer mes lots !"
           ) : (
-            "Terminer la configuration →"
+            "Terminer la configuration"
           )}
         </button>
 
