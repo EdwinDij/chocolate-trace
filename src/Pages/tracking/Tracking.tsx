@@ -70,10 +70,10 @@ export default function Suivi() {
     if (searchParams.get("checkout") === "success") {
       setShowCheckoutSuccess(true);
       setSearchParams({});
-      setTimeout(() => setShowCheckoutSuccess(false), 5000);
+      const timer = setTimeout(() => setShowCheckoutSuccess(false), 5000);
+      return () => clearTimeout(timer);
     }
   }, []);
-
   useEffect(() => {
     const product = products.find((p) => p.id === typeId);
     if (product?.week_lifetime) {
@@ -166,10 +166,13 @@ export default function Suivi() {
         last_status: batches.find((b) => b.id === id)?.status ?? null,
       })
       .eq("id", id);
-    if (!error) {
-      showToast("Boîte marquée comme ouverte !");
-      fetchBatches(0);
+
+    if (error) {
+      showToast("Erreur lors de l'ouverture du lot.", "error");
+      return;
     }
+    showToast("Boîte marquée comme ouverte !");
+    fetchBatches(0);
   };
 
   const updateStatus = async (
@@ -322,19 +325,36 @@ export default function Suivi() {
       return;
     }
 
-    const { data } = await supabase
+    const { data, error: selectError } = await supabase
       .from("historic")
       .select("id")
       .eq("batch_id", batch.id)
       .order("created_at", { ascending: false })
       .limit(1);
+
+    if (selectError) {
+      showToast("Action annulée mais erreur sur l'historique.", "error");
+      fetchBatches(0);
+      return;
+    }
+
     if (data?.[0]) {
-      await supabase.from("historic").delete().eq("id", data[0].id);
+      const { error: deleteError } = await supabase
+        .from("historic")
+        .delete()
+        .eq("id", data[0].id);
+
+      if (deleteError) {
+        showToast("Action annulée mais erreur sur l'historique.", "error");
+        fetchBatches(0);
+        return;
+      }
     }
 
     showToast("Action annulée !");
     fetchBatches(0);
   };
+
   return (
     <div className="min-h-screen bg-app pb-36 font-sans antialiased">
       {showCheckoutSuccess && (
