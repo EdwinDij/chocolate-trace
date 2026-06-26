@@ -24,7 +24,6 @@ export default function Welcome() {
 
   const displayName = user?.user_metadata?.display_name as string | undefined;
   const firstName = displayName?.split(" ")[0] ?? "là";
-  console.log(shop);
 
   const steps: Step[] = [
     {

@@ -18,7 +18,6 @@ import { useShop } from "./context/ShopContext";
 import Welcome from "./Pages/welcome/welcomePage";
 
 function App() {
-  // console.log(computeBatchesDates("S21-2025", 5));
   const { shop } = useShop();
 
   return (

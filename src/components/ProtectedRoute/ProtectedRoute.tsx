@@ -17,7 +17,7 @@ export default function ProtectedRoute({
     );
   }
 
-  if (!user) return <Navigate to="/auth" replace />;
+  if (!user || !shop) return <Navigate to="/auth" replace />;
 
   const onboardingAllowedPaths = [
     "/welcome",

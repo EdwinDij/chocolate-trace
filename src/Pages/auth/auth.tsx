@@ -44,7 +44,7 @@ export default function Auth() {
   const [info, setInfo] = useState<string | null>(null);
 
   const handleSignIn = async () => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data,error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
@@ -52,6 +52,12 @@ export default function Auth() {
       setError("Email ou mot de passe incorrect.");
       return;
     }
+    // if (!remember && data.session) {
+    //   await supabase.auth.setSession({
+    //     access_token: data.session.access_token,
+    //     refresh_token: data.session.refresh_token,
+    //   });
+    // }
     navigate("/");
   };
 
@@ -103,7 +109,7 @@ export default function Auth() {
 
     const { data: shopData, error: shopError } = await supabase
       .from("shops")
-      .insert({ name: shop, work, plan: "gratuit", owner_id: userId })
+      .insert({ name: shop, work, owner_id: userId })
       .select()
       .single();
 
