@@ -55,7 +55,7 @@ export function exportToCSV(entries: HistoricEntry[], shopName: string, period: 
 export function exportToPDF(entries: HistoricEntry[], shopName: string, period: string) {
 
     const doc = new jsPDF()
-    const pageWidth = doc.internal.pageSize.getHeight()
+    const pageWidth = doc.internal.pageSize.getWidth()
 
     doc.setFillColor(29, 66, 59); // ink-800
     doc.rect(0, 0, pageWidth, 40, "F");
@@ -154,7 +154,7 @@ export function exportToPDF(entries: HistoricEntry[], shopName: string, period: 
             margin: { left: 14, right: 14 },
         });
 
-        currentY = (doc as any).lastAutoTable.finalY + 12;
+        currentY = (doc as jsPDF & { lastAutoTable: { finalY: number } }).lastAutoTable.finalY + 12;
     });
 
     const pageCount = doc.getNumberOfPages();
@@ -165,7 +165,7 @@ export function exportToPDF(entries: HistoricEntry[], shopName: string, period: 
         doc.text(
             `© 2026 Tracéo — Edwin Dijeont · Page ${i}/${pageCount}`,
             pageWidth / 2,
-            doc.internal.pageSize.getHeight() - 8,
+            doc.internal.pageSize.getHeight() - 8, 
             { align: "center" }
         );
     }

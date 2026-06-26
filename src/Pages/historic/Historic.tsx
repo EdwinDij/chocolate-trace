@@ -382,7 +382,8 @@ export default function Historic() {
                 <div className="mt-2 flex flex-col gap-2 pl-2">
                   {entries.map((entry) => {
                     const style =
-                      STATUS_STYLE[entry.status] || STATUS_STYLE.epuise;
+                      STATUS_STYLE[entry.status] ??
+                      STATUS_STYLE[BatchStatus.EPUISE];
                     return (
                       <div
                         key={entry.id}

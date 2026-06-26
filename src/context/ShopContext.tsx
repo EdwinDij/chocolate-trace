@@ -23,7 +23,6 @@ interface ShopContextType {
   shops: Shop[];
   plan: Plan;
   loading: boolean;
-  onboarded: boolean;
   refreshShop: () => Promise<void>;
   switchShop: (shopId: string) => void;
   signOut: () => Promise<void>;
@@ -38,7 +37,6 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
   const [shops, setShops] = useState<Shop[]>([]);
   const [plan, setPlan] = useState<Plan>("gratuit");
   const [loading, setLoading] = useState(true);
-  const [onboarded, setOnboarded] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -164,7 +162,6 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
         loading,
         switchShop,
         signOut,
-        onboarded,
         refreshShop,
       }}
     >

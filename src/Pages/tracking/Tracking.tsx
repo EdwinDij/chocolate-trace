@@ -124,7 +124,9 @@ export default function Suivi() {
     if (!typeId || !reference.trim() || !weekReceiving || !quantity || !shopId)
       return;
     const finalWithdrawal =
-      differentWithdrawal && withdrawalDate ? withdrawalDate : expirationDate || null;
+      differentWithdrawal && withdrawalDate
+        ? withdrawalDate
+        : expirationDate || null;
     const { error } = await supabase.from("batches").insert({
       product_id: typeId,
       shop_id: shopId,
@@ -135,7 +137,8 @@ export default function Suivi() {
       last_status: null,
       status: BatchStatus.STOCK,
       expiration_date: expirationDate || null,
-      withdrawal_date: finalWithdrawal !== expirationDate ? finalWithdrawal : null,
+      withdrawal_date:
+        finalWithdrawal !== expirationDate ? finalWithdrawal : null,
     });
 
     if (!error) {
@@ -175,6 +178,11 @@ export default function Suivi() {
     reason?: string,
   ) => {
     const batch = batches.find((b) => b.id === id)!;
+    if (!batch) {
+      showToast("Lot introuvable, veuillez rafraîchir la page.", "error");
+      fetchBatches(0);
+      return;
+    }
 
     if (status === BatchStatus.EPUISE) {
       const archiveError = await archiveBatch(batch, BatchStatus.EPUISE);
@@ -266,7 +274,10 @@ export default function Suivi() {
       if (filter === "Périmés") return b.status === BatchStatus.PERIME;
       if (filter === "À retirer") {
         if (b.withdrawal_date || b.expiration_date) {
-          const st = computeStatusFromDates(b.withdrawal_date, b.expiration_date);
+          const st = computeStatusFromDates(
+            b.withdrawal_date,
+            b.expiration_date,
+          );
           return st === "expired" || st === "warning";
         }
         return dates?.status === "expired" || dates?.status === "warning";
@@ -326,20 +337,34 @@ export default function Suivi() {
   };
   return (
     <div className="min-h-screen bg-app pb-36 font-sans antialiased">
-
       {showCheckoutSuccess && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 px-6">
           <div className="bg-white rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl max-w-xs w-full">
             <div className="w-16 h-16 bg-teal-100 rounded-full flex items-center justify-center mb-4">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-8 h-8 text-teal-600">
-                <path fillRule="evenodd" d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z" clipRule="evenodd" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                className="w-8 h-8 text-teal-600"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M2.25 12c0-5.385 4.365-9.75 9.75-9.75s9.75 4.365 9.75 9.75-4.365 9.75-9.75 9.75S2.25 17.385 2.25 12Zm13.36-1.814a.75.75 0 1 0-1.22-.872l-3.236 4.53L9.53 12.22a.75.75 0 0 0-1.06 1.06l2.25 2.25a.75.75 0 0 0 1.14-.094l3.75-5.25Z"
+                  clipRule="evenodd"
+                />
               </svg>
             </div>
-            <h2 className="text-xl font-black text-slate-800 mb-1">Abonnement activé !</h2>
+            <h2 className="text-xl font-black text-slate-800 mb-1">
+              Abonnement activé !
+            </h2>
             <p className="text-sm text-slate-500 mb-1">
-              Plan <span className="font-bold text-teal-600 capitalize">{plan}</span> actif sur {shop?.name}
+              Plan{" "}
+              <span className="font-bold text-teal-600 capitalize">{plan}</span>{" "}
+              actif sur {shop?.name}
             </p>
-            <p className="text-xs text-slate-400 mb-6">Toutes les fonctionnalités sont débloquées.</p>
+            <p className="text-xs text-slate-400 mb-6">
+              Toutes les fonctionnalités sont débloquées.
+            </p>
             <button
               onClick={() => setShowCheckoutSuccess(false)}
               className="w-full bg-ink-800 text-white font-bold py-3 rounded-2xl text-sm active:scale-95 transition-all"
@@ -592,7 +617,13 @@ export default function Suivi() {
               )}
               {differentWithdrawal && withdrawalDate && expirationDate && (
                 <p className="text-xs text-amber-600 font-medium mt-1">
-                  Retrait {Math.round((new Date(expirationDate).getTime() - new Date(withdrawalDate).getTime()) / 86400000)} j. avant la DLC
+                  Retrait{" "}
+                  {Math.round(
+                    (new Date(expirationDate).getTime() -
+                      new Date(withdrawalDate).getTime()) /
+                      86400000,
+                  )}{" "}
+                  j. avant la DLC
                 </p>
               )}
             </div>

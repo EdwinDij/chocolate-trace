@@ -14,7 +14,11 @@ function endOfWeekDate(weeks: number): string {
   d.setDate(d.getDate() + weeks * 7);
   const day = d.getDay();
   if (day !== 0) d.setDate(d.getDate() + (7 - day));
-  return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return d.toLocaleDateString("fr-FR", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 export default function Management() {
@@ -58,11 +62,16 @@ export default function Management() {
     setLoading(false);
   };
 
-  const addProduct = async (e: React.MouseEvent<HTMLButtonElement> | React.FormEvent) => {
+  const addProduct = async (
+    e: React.MouseEvent<HTMLButtonElement> | React.FormEvent,
+  ) => {
     e.preventDefault();
     if (!name.trim() || !category.trim() || !shopId) return;
     if (!canAddProduct(products.length)) {
-      showToast("Limite de 10 produits atteinte. Passez au plan Boutique pour en ajouter plus.", "error");
+      showToast(
+        "Limite de 10 produits atteinte. Passez au plan Boutique pour en ajouter plus.",
+        "error",
+      );
       return;
     }
 
@@ -89,8 +98,35 @@ export default function Management() {
 
   const deleteProduct = async () => {
     if (!deleteTargetId) return;
-    const { error } = await supabase.from("products").delete().eq("id", deleteTargetId);
+
+    const { count: activeBatches } = await supabase
+      .from("batches")
+      .select("*", { count: "exact", head: true })
+      .eq("product_id", deleteTargetId)
+      .in("status", ["stock", "ouvert"]);
+
+    if (activeBatches && activeBatches > 0) {
+      showToast(
+        `Ce produit a encore ${activeBatches} lot${activeBatches > 1 ? "s" : ""} actif${activeBatches > 1 ? "s" : ""}. Terminez-les dans le Suivi avant de supprimer.`,
+        "error",
+      );
+      setDeleteTargetId(null);
+      return;
+    }
+
+    await supabase
+      .from("batches")
+      .delete()
+      .eq("product_id", deleteTargetId)
+      .in("status", ["perime", "non_conforme", "epuise"]);
+
+    const { error } = await supabase
+      .from("products")
+      .delete()
+      .eq("id", deleteTargetId);
+
     setDeleteTargetId(null);
+
     if (!error) {
       fetchProducts();
       showToast("Produit supprimé !");
@@ -115,16 +151,14 @@ export default function Management() {
   };
 
   const saveEdit = async () => {
-    if (!editName.trim()) return;
-    const { error } = await supabase
-      .from("products")
-      .update({
-        name: editName.trim(),
-        barcode: editBarcode.trim() || null,
-        category: editCategory.trim() || null,
-        week_lifetime: editLifeWeeks ? parseInt(editLifeWeeks) : null,
-      })
-      .eq("id", editingId!);
+    if (!editName.trim() || !editingId) return;
+
+    const { error } = await supabase.from("products").update({
+      name: editName.trim(),
+      barcode: editBarcode.trim() || null,
+      category: editCategory.trim() || null,
+      week_lifetime: editLifeWeeks ? parseInt(editLifeWeeks) : null,
+    });
     if (!error) {
       showToast("Produit mis à jour !");
       setEditingId(null);
@@ -144,7 +178,9 @@ export default function Management() {
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-xl font-black tracking-tight text-foam-100">Catalogue</h1>
+            <h1 className="text-xl font-black tracking-tight text-foam-100">
+              Catalogue
+            </h1>
             <p className="text-teal-300/60 text-xs mt-0.5 font-medium">
               {shop?.name} — Recettes & conservations
             </p>
@@ -166,15 +202,37 @@ export default function Management() {
         >
           {showForm ? (
             <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18 18 6M6 6l12 12"
+                />
               </svg>
               Annuler
             </>
           ) : (
             <>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+                strokeWidth={2.5}
+                stroke="currentColor"
+                className="w-4 h-4"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 4.5v15m7.5-7.5h-15"
+                />
               </svg>
               Ajouter un produit
             </>
@@ -224,7 +282,8 @@ export default function Management() {
               />
               {lifeWeeks && parseInt(lifeWeeks) > 0 && (
                 <p className="text-xs text-teal-600 font-medium mt-1 px-1">
-                  → Fin de semaine estimée : {endOfWeekDate(parseInt(lifeWeeks))}
+                  → Fin de semaine estimée :{" "}
+                  {endOfWeekDate(parseInt(lifeWeeks))}
                 </p>
               )}
             </div>
@@ -264,7 +323,9 @@ export default function Management() {
           {loading ? (
             <div className="flex flex-col items-center justify-center pt-12 gap-2">
               <div className="w-5 h-5 border-2 border-amber-900/20 border-t-amber-900 rounded-full animate-spin" />
-              <p className="text-center text-amber-900/40 text-xs font-medium">Lecture du catalogue...</p>
+              <p className="text-center text-amber-900/40 text-xs font-medium">
+                Lecture du catalogue...
+              </p>
             </div>
           ) : products.length === 0 ? (
             <p className="text-center text-amber-900/40 text-sm py-8 bg-card rounded-2xl border border-slate-200 shadow-sm font-medium">
@@ -278,7 +339,10 @@ export default function Management() {
                 </h2>
                 <ul className="flex flex-col gap-3">
                   {list.map((p) => (
-                    <li key={p.id} className="bg-card rounded-xl px-4 py-3 shadow-sm border border-stone-200">
+                    <li
+                      key={p.id}
+                      className="bg-card rounded-xl px-4 py-3 shadow-sm border border-stone-200"
+                    >
                       {editingId === p.id ? (
                         <div className="flex flex-col gap-2">
                           <input
@@ -319,10 +383,16 @@ export default function Management() {
                             </button>
                           </div>
                           <div className="flex gap-2 mt-1">
-                            <button onClick={saveEdit} className="flex-1 bg-ink-800 text-white py-2 rounded-xl text-sm font-medium">
+                            <button
+                              onClick={saveEdit}
+                              className="flex-1 bg-ink-800 text-white py-2 rounded-xl text-sm font-medium"
+                            >
                               ✓ Sauvegarder
                             </button>
-                            <button onClick={() => setEditingId(null)} className="flex-1 bg-stone-100 text-slate-500 py-2 rounded-xl text-sm font-medium">
+                            <button
+                              onClick={() => setEditingId(null)}
+                              className="flex-1 bg-stone-100 text-slate-500 py-2 rounded-xl text-sm font-medium"
+                            >
                               Annuler
                             </button>
                           </div>
@@ -330,7 +400,9 @@ export default function Management() {
                       ) : (
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
-                            <p className="font-semibold text-slate-800 text-sm truncate">{p.name}</p>
+                            <p className="font-semibold text-slate-800 text-sm truncate">
+                              {p.name}
+                            </p>
                             <div className="flex flex-wrap gap-x-3 mt-0.5">
                               {p.week_lifetime && (
                                 <p className="text-xs text-slate-400">
@@ -338,13 +410,25 @@ export default function Management() {
                                 </p>
                               )}
                               {p.barcode && (
-                                <p className="text-xs text-slate-400">📷 {p.barcode}</p>
+                                <p className="text-xs text-slate-400">
+                                  📷 {p.barcode}
+                                </p>
                               )}
                             </div>
                           </div>
                           <div className="flex items-center gap-1 shrink-0">
-                            <button onClick={() => startEdit(p)} className="text-amber-600 hover:text-teal-700 text-lg px-1">✏️</button>
-                            <button onClick={() => setDeleteTargetId(p.id)} className="text-red-400 hover:text-red-600 text-lg px-1">🗑</button>
+                            <button
+                              onClick={() => startEdit(p)}
+                              className="text-amber-600 hover:text-teal-700 text-lg px-1"
+                            >
+                              ✏️
+                            </button>
+                            <button
+                              onClick={() => setDeleteTargetId(p.id)}
+                              className="text-red-400 hover:text-red-600 text-lg px-1"
+                            >
+                              🗑
+                            </button>
                           </div>
                         </div>
                       )}
@@ -358,7 +442,10 @@ export default function Management() {
       </div>
 
       {showBarcodeScanner && (
-        <BarcodeScanner onScan={handleBarcodeScan} onClose={() => setShowBarcodeScanner(false)} />
+        <BarcodeScanner
+          onScan={handleBarcodeScan}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
       )}
 
       <BottomSheet
@@ -372,10 +459,14 @@ export default function Management() {
       />
 
       <div className="px-4 mt-8 pb-2">
-        <p className="text-center text-[10px] text-amber-900/30 font-medium">© 2026 Edwin Dijeont</p>
+        <p className="text-center text-[10px] text-amber-900/30 font-medium">
+          © 2026 Edwin Dijeont
+        </p>
       </div>
 
-      {toast && <Toast message={toast.message} type={toast.type} onClose={hideToast} />}
+      {toast && (
+        <Toast message={toast.message} type={toast.type} onClose={hideToast} />
+      )}
     </div>
   );
 }
