@@ -21,6 +21,8 @@ export default function Welcome() {
     {},
   );
   const [loading, setLoading] = useState(false);
+  const [showPwaBanner, setShowPwaBanner] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
 
   const displayName = user?.user_metadata?.display_name as string | undefined;
   const firstName = displayName?.split(" ")[0] ?? "là";
@@ -53,6 +55,22 @@ export default function Welcome() {
       optional: true,
     },
   ];
+
+  useEffect(() => {
+    const isInstalled =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as any).standalone === true;
+    const dismissed = localStorage.getItem("pwa-banner-dismissed") === "true";
+    const ios = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const android = /Android/.test(navigator.userAgent);
+    setIsIOS(ios);
+    setShowPwaBanner(!isInstalled && !dismissed && (ios || android));
+  }, []);
+
+  const dismissPwaBanner = () => {
+    localStorage.setItem("pwa-banner-dismissed", "true");
+    setShowPwaBanner(false);
+  };
 
   // Vérifie automatiquement les étapes complétées
   useEffect(() => {
@@ -154,6 +172,44 @@ export default function Welcome() {
           </div>
         </div>
       </div>
+
+      {/* Bandeau installation PWA */}
+      {showPwaBanner && (
+        <div className="px-4 mt-4">
+          <div className="bg-teal-50 border border-teal-200 rounded-2xl px-4 py-4">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl leading-none">📱</span>
+                <div>
+                  <p className="font-bold text-sm text-teal-800">
+                    Installez l'app sur votre téléphone
+                  </p>
+                  <p className="text-xs text-teal-600 mt-1 leading-relaxed">
+                    {isIOS
+                      ? "Appuyez sur le bouton Partager puis 'Sur l'écran d'accueil'"
+                      : "Appuyez sur le menu ⋮ puis 'Ajouter à l'écran d'accueil'"}
+                  </p>
+                  <a
+                    href="https://traqueo.fr/docs/installation"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-xs font-bold text-teal-600 hover:text-teal-800 transition-colors mt-2 inline-block"
+                  >
+                    Voir le guide complet →
+                  </a>
+                </div>
+              </div>
+              <button
+                onClick={dismissPwaBanner}
+                className="text-teal-400 hover:text-teal-600 transition-colors shrink-0 mt-0.5"
+                aria-label="Fermer le bandeau d'installation"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Steps */}
       <div className="px-4 mt-5 flex flex-col gap-3">
