@@ -158,10 +158,10 @@ export default function Historic() {
   );
 
   return (
-    <div className="min-h-screen bg-app pb-36 font-sans antialiased">
+    <div className="min-h-screen bg-app pb-36 lg:pb-8 font-sans antialiased">
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-start justify-between">
-          <div>
+          <div className="lg:hidden">
             <h1 className="text-xl font-black tracking-tight text-foam-100">
               Historique
             </h1>
@@ -195,7 +195,7 @@ export default function Historic() {
 
       {/* Panneau export */}
       {showExport && canExport && (
-        <div className="mx-4 mt-4 bg-card rounded-2xl p-4 border border-slate-200 shadow-card">
+        <div className="mx-4 mt-4 bg-card rounded-2xl p-4 border border-slate-200 shadow-card lg:max-w-xl lg:mx-auto lg:mt-4">
           <h2 className="text-micro font-bold text-slate-400 uppercase tracking-wider mb-4">
             Exporter l'historique
           </h2>
@@ -285,7 +285,7 @@ export default function Historic() {
       )}
 
       {/* KPI */}
-      <div className="px-4 mt-5 grid grid-cols-3 gap-3">
+      <div className="px-4 mt-5 grid grid-cols-3 gap-3 lg:max-w-3xl lg:mx-auto">
         <div className="bg-card border border-red-100 rounded-2xl p-3 text-center">
           <p className="text-2xl font-black text-red-600">{counts.perime}</p>
           <p className="text-[10px] text-red-400 font-bold uppercase mt-0.5">
@@ -338,7 +338,7 @@ export default function Historic() {
         ))}
       </div>
 
-      <div className="px-4 mt-4 flex flex-col gap-2">
+      <div className="px-4 mt-4 flex flex-col gap-2 lg:max-w-3xl lg:mx-auto">
         {loading ? (
           <div className="flex justify-center pt-12">
             <div className="w-5 h-5 border-2 border-ink-800/20 border-t-ink-800 rounded-full animate-spin" />

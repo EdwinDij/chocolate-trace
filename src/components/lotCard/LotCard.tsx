@@ -187,33 +187,33 @@ export default function LotCard({
         >
           {isActive && (
             <div
-              className={`grid gap-2 ${
+              className={`grid gap-2 lg:flex lg:flex-row lg:flex-wrap ${
                 batch.status === BatchStatus.STOCK ? "grid-cols-2" : "grid-cols-3"
               }`}
             >
               {batch.status === BatchStatus.STOCK && (
                 <button
                   onClick={() => onOpen(batch.id)}
-                  className="min-h-[44px] bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                  className="min-h-[44px] lg:flex-1 bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
                 >
                   🔓 Ouvrir
                 </button>
               )}
               <button
                 onClick={() => setSheet("perime")}
-                className="min-h-[44px] bg-red-50/60 text-red-600 border border-red-100 hover:bg-red-50 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-[44px] lg:flex-1 bg-red-50/60 text-red-600 border border-red-100 hover:bg-red-50 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Périmé
               </button>
               <button
                 onClick={() => setSheet("non_conforme")}
-                className="min-h-[44px] bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-[44px] lg:flex-1 bg-purple-50 text-purple-600 border border-purple-100 hover:bg-purple-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Non conf.
               </button>
               <button
                 onClick={() => setSheet("epuise")}
-                className="min-h-[44px] bg-sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center active:scale-95"
+                className="min-h-[44px] lg:flex-1 bg-sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center active:scale-95"
               >
                 Épuisé
               </button>

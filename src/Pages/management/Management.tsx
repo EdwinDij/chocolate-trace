@@ -174,10 +174,10 @@ export default function Management() {
   }, {});
 
   return (
-    <div className="min-h-screen bg-app pb-36 font-sans antialiased">
+    <div className="min-h-screen bg-app pb-36 lg:pb-8 font-sans antialiased">
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="lg:hidden">
             <h1 className="text-xl font-black tracking-tight text-foam-100">
               Catalogue
             </h1>
@@ -191,7 +191,7 @@ export default function Management() {
         </div>
       </header>
 
-      <div className="px-4 mt-5">
+      <div className="px-4 mt-5 lg:max-w-5xl lg:mx-auto lg:px-8">
         <button
           onClick={() => setShowForm(!showForm)}
           className={`w-full py-3 rounded-2xl font-bold text-sm tracking-wide transition-all duration-200 shadow-sm border flex items-center justify-center gap-2 active:scale-[0.98] ${
@@ -337,7 +337,7 @@ export default function Management() {
                 <h2 className="text-[11px] font-bold text-amber-900/40 uppercase tracking-wider mb-2 px-1">
                   {cat} ({list.length})
                 </h2>
-                <ul className="flex flex-col gap-3">
+                <ul className="flex flex-col gap-3 lg:grid lg:grid-cols-2 xl:grid-cols-3">
                   {list.map((p) => (
                     <li
                       key={p.id}

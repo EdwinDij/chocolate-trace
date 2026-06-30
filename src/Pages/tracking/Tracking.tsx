@@ -356,7 +356,7 @@ export default function Suivi() {
   };
 
   return (
-    <div className="min-h-screen bg-app pb-36 font-sans antialiased">
+    <div className="min-h-screen bg-app pb-36 lg:pb-8 font-sans antialiased">
       {showCheckoutSuccess && (
         <div className="fixed inset-0 z-100 flex items-center justify-center bg-black/60 px-6">
           <div className="bg-white rounded-3xl p-8 flex flex-col items-center text-center shadow-2xl max-w-xs w-full">
@@ -397,7 +397,7 @@ export default function Suivi() {
 
       <header className="bg-ink-800 text-white px-4 pt-8 pb-6 sticky top-0 z-10 shadow-md">
         <div className="flex items-center justify-between">
-          <div>
+          <div className="lg:hidden">
             <h1 className="text-xl font-black tracking-tight text-foam-100">
               Suivi des Lots
             </h1>
@@ -474,7 +474,7 @@ export default function Suivi() {
         </div>
       </header>
       {/* Searchbar */}
-      <div className="mt-4 relative px-4">
+      <div className="mt-4 relative px-4 lg:max-w-2xl lg:mx-auto">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
@@ -518,7 +518,7 @@ export default function Suivi() {
           </button>
         )}
       </div>
-      <div className="px-4">
+      <div className="px-4 lg:max-w-5xl lg:mx-auto lg:px-8">
         {/* Formulaire ajout lot style Carte Premium */}
         {showForm && (
           <div className="mt-4 bg-card rounded-2xl p-4 shadow-[0_4px_16px_-4px_rgba(62,39,35,0.08)] border border-slate-200 animate-fadeIn">
@@ -700,7 +700,7 @@ export default function Suivi() {
         )}
 
         {/* Liste principale des lots */}
-        <div className="mt-4 flex flex-col gap-3">
+        <div className="mt-4 flex flex-col gap-3 lg:grid lg:grid-cols-2">
           {loading ? (
             <div className="flex flex-col items-center justify-center pt-12 gap-2">
               <div className="w-5 h-5 border-2 border-amber-900/20 border-t-amber-900 rounded-full animate-spin" />
