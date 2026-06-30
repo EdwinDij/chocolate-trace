@@ -64,7 +64,7 @@ export default function Navbar() {
       : [...baseTabs, compteTab];
 
   return (
-    <nav className="fixed bottom-0 left-0 w-full bg-ink-800 border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe text-foam-100">
+    <nav className="lg:hidden fixed bottom-0 left-0 w-full bg-ink-800 border-t border-amber-900/40 shadow-[0_-4px_16px_rgba(0,0,0,0.1)] z-50 pb-safe text-foam-100">
       <ul className="flex items-center h-16 px-1">
         {tabs.map((tab) => {
           const isActive =
