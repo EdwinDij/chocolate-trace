@@ -33,7 +33,7 @@ export function exportToCSV(entries: HistoricEntry[], shopName: string, period: 
     ])
 
     const csvContent = [
-        `# Tracéo — ${shopName} — ${period}`,
+        `# Traquéo — ${shopName} — ${period}`,
         `# Exporté le ${new Date().toLocaleDateString("fr-FR")}`,
         "",
         headers.join(";"),
@@ -63,7 +63,7 @@ export function exportToPDF(entries: HistoricEntry[], shopName: string, period: 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("Tracéo", 14, 18);
+    doc.text("Traquéo", 14, 18);
 
     doc.setFontSize(10);
     doc.setFont("helvetica", "normal");
@@ -163,7 +163,7 @@ export function exportToPDF(entries: HistoricEntry[], shopName: string, period: 
         doc.setFontSize(8);
         doc.setTextColor(180, 180, 180);
         doc.text(
-            `© 2026 Tracéo — Edwin Dijeont · Page ${i}/${pageCount}`,
+            `© 2026 Traquéo — Edwin Dijeont · Page ${i}/${pageCount}`,
             pageWidth / 2,
             doc.internal.pageSize.getHeight() - 8,
             { align: "center" }

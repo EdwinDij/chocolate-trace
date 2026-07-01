@@ -119,7 +119,7 @@ export default function Welcome() {
         <div className="flex items-start justify-between">
           <div>
             <p className="text-teal-300/60 text-xs font-bold uppercase tracking-widest mb-2">
-              Bienvenue sur Tracéo 🎉
+              Bienvenue sur Traquéo 🎉
             </p>
             <h1 className="text-2xl font-black text-foam-100 tracking-tight">
               Bonjour {firstName} !

@@ -165,7 +165,7 @@ export default function Auth() {
           <img src="/icon-192.png"></img>
         </div>
         <h1 className="text-white text-2xl font-black tracking-tight">
-          Tracéo
+          Traquéo
         </h1>
         <p className="text-teal-300/60 text-sm mt-1">
           La traçabilité des métiers de bouche
