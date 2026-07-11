@@ -22,6 +22,7 @@ const FILTERS = [
   "Actifs",
   "En stock",
   "Ouverts",
+  "En vente",
   "Périmés",
   "À retirer",
 ] as const;
@@ -278,6 +279,7 @@ export default function Suivi() {
         );
       if (filter === "En stock") return b.status === BatchStatus.STOCK;
       if (filter === "Ouverts") return b.status === BatchStatus.OUVERT;
+      if (filter === "En vente") return b.status === BatchStatus.EN_VENTE;
       if (filter === "Périmés") return b.status === BatchStatus.PERIME;
       if (filter === "À retirer") {
         if (b.withdrawal_date || b.expiration_date) {
