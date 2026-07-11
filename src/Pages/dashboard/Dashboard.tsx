@@ -39,7 +39,7 @@ export default function Alertes() {
       .from("batches")
       .select("*, products!product_id(name, week_lifetime)")
       .eq("shop_id", shopId)
-      .in("status", ["stock", "ouvert"])
+      .in("status", ["stock", "ouvert", "en_vente"])
       .order("created_at", { ascending: true })
       .range(from, to);
     if (!error) {

@@ -103,7 +103,7 @@ export default function Management() {
       .from("batches")
       .select("*", { count: "exact", head: true })
       .eq("product_id", deleteTargetId)
-      .in("status", ["stock", "ouvert"]);
+      .in("status", ["stock", "ouvert", "en_vente"]);
 
     if (activeBatches && activeBatches > 0) {
       showToast(
