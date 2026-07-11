@@ -79,6 +79,15 @@ export default function LotDetail() {
       });
   }, [batchId]);
 
+  const handleMiseEnVente = async () => {
+    if (!batch) return;
+    await supabase
+      .from("batches")
+      .update({ status: BatchStatus.EN_VENTE, last_status: batch.status })
+      .eq("id", batch.id);
+    navigate(-1);
+  };
+
   const handleConfirm = async (reason?: string) => {
     if (!sheet || !batch) return;
 
@@ -145,6 +154,10 @@ export default function LotDetail() {
     batch.status !== BatchStatus.PERIME &&
     batch.status !== BatchStatus.NON_CONFORME &&
     batch.status !== BatchStatus.EPUISE;
+
+  const showOuvrir = batch.status === BatchStatus.STOCK;
+  const showMisEnVente = batch.status !== BatchStatus.EN_VENTE;
+  const actionCount = (showOuvrir ? 1 : 0) + (showMisEnVente ? 1 : 0) + 4;
 
   const receivingShort = batch.week_receiving.split("-")[0];
   const expiryShort = dates?.expiryWeek.split("-")[0] ?? "—";
@@ -294,12 +307,20 @@ export default function LotDetail() {
           {/* Actions */}
           {isActive && (
             <div className="grid grid-cols-2 gap-3">
-              {batch.status === BatchStatus.STOCK && (
+              {showOuvrir && (
                 <button
                   onClick={() => setSheet("ouvrir")}
-                  className="col-span-2 min-h-13 bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
+                  className="min-h-13 bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
                 >
                   🔓 Ouvrir le lot
+                </button>
+              )}
+              {showMisEnVente && (
+                <button
+                  onClick={handleMiseEnVente}
+                  className="min-h-13 bg-sky-100 text-sky-700 border border-sky-200 hover:bg-sky-200 rounded-2xl text-sm font-bold transition-all flex items-center justify-center gap-2 active:scale-95"
+                >
+                  🏷 Mis en vente
                 </button>
               )}
               <button
@@ -322,7 +343,9 @@ export default function LotDetail() {
               </button>
               <button
                 onClick={() => navigate(-1)}
-                className="min-h-13 bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95"
+                className={`min-h-13 bg-ink-800 text-foam-100 hover:bg-ink-900 rounded-2xl text-sm font-bold transition-all flex items-center justify-center active:scale-95 ${
+                  actionCount % 2 !== 0 ? "col-span-2" : ""
+                }`}
               >
                 Retour
               </button>

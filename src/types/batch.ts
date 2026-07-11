@@ -1,6 +1,7 @@
 export enum BatchStatus {
   STOCK = "stock",
   OUVERT = "ouvert",
+  EN_VENTE = "en_vente",
   PERIME = "perime",
   NON_CONFORME = "non_conforme",
   EPUISE = "epuise",

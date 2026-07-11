@@ -270,7 +270,9 @@ export default function Suivi() {
       if (typeFilter && b.products.category !== typeFilter) return false;
       if (filter === "Actifs")
         return (
-          b.status === BatchStatus.STOCK || b.status === BatchStatus.OUVERT
+          b.status === BatchStatus.STOCK ||
+          b.status === BatchStatus.OUVERT ||
+          b.status === BatchStatus.EN_VENTE
         );
       if (filter === "En stock") return b.status === BatchStatus.STOCK;
       if (filter === "Ouverts") return b.status === BatchStatus.OUVERT;

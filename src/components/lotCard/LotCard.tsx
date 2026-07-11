@@ -69,6 +69,8 @@ export default function LotCard({
       return getStatusStyle(BatchStatus.PERIME);
     if (batch.status === BatchStatus.NON_CONFORME)
       return getStatusStyle(BatchStatus.NON_CONFORME);
+    if (batch.status === BatchStatus.EN_VENTE)
+      return getStatusStyle(BatchStatus.EN_VENTE);
     if (batch.status === BatchStatus.STOCK || !batch.week_opening)
       return getStatusStyle(BatchStatus.STOCK);
     if (batch.withdrawal_date || batch.expiration_date)
@@ -87,6 +89,10 @@ export default function LotCard({
     batch.status !== BatchStatus.PERIME &&
     batch.status !== BatchStatus.NON_CONFORME &&
     batch.status !== BatchStatus.EPUISE;
+
+  const showOuvrir = batch.status === BatchStatus.STOCK;
+  const showMisEnVente = batch.status !== BatchStatus.EN_VENTE;
+  const actionCount = (showOuvrir ? 1 : 0) + (showMisEnVente ? 1 : 0) + 3;
 
   const handleConfirm = (reason?: string) => {
     if (!sheet) return;
@@ -188,15 +194,23 @@ export default function LotCard({
           {isActive && (
             <div
               className={`grid gap-2 lg:flex lg:flex-row lg:flex-wrap ${
-                batch.status === BatchStatus.STOCK ? "grid-cols-2" : "grid-cols-3"
+                actionCount === 3 ? "grid-cols-3" : "grid-cols-2"
               }`}
             >
-              {batch.status === BatchStatus.STOCK && (
+              {showOuvrir && (
                 <button
                   onClick={() => onOpen(batch.id)}
                   className="min-h-[44px] lg:flex-1 bg-teal-50 text-teal-700 border border-teal-200/60 hover:bg-teal-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
                 >
                   🔓 Ouvrir
+                </button>
+              )}
+              {showMisEnVente && (
+                <button
+                  onClick={() => onUpdateStatus(batch.id, BatchStatus.EN_VENTE)}
+                  className="min-h-[44px] lg:flex-1 bg-sky-100 text-sky-700 border border-sky-200 hover:bg-sky-200 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  🏷 Mis en vente
                 </button>
               )}
               <button
@@ -213,7 +227,9 @@ export default function LotCard({
               </button>
               <button
                 onClick={() => setSheet("epuise")}
-                className="min-h-[44px] lg:flex-1 bg-sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center active:scale-95"
+                className={`min-h-[44px] lg:flex-1 bg-sunk text-stone-600 border border-stone-200/80 hover:bg-stone-100 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center active:scale-95 ${
+                  actionCount === 5 ? "col-span-2" : ""
+                }`}
               >
                 Épuisé
               </button>

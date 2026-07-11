@@ -142,6 +142,8 @@ export function getStatusStyle(status: string): StatusStyle {
       return { bg: "bg-green-100", text: "text-green-700", label: "OK" };
     case "ouvert":
       return { bg: "bg-amber-100", text: "text-amber-700", label: "Ouvert" };
+    case "en_vente":
+      return { bg: "bg-sky-100", text: "text-sky-700", label: "En vente" };
     case "stock":
       return { bg: "bg-stone-100", text: "text-slate-500", label: "En stock" };
     case "perime":
