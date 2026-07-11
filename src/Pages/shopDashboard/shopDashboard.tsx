@@ -46,7 +46,7 @@ export default function Dashboard() {
               .from("batches")
               .select("*", { count: "exact", head: true })
               .eq("shop_id", s.id)
-              .in("status", ["stock", "ouvert"]),
+              .in("status", ["stock", "ouvert", "en_vente"]),
             supabase
               .from("batches")
               .select("*", { count: "exact", head: true })

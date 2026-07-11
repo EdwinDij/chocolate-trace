@@ -22,6 +22,7 @@ const FILTERS = [
   "Actifs",
   "En stock",
   "Ouverts",
+  "En vente",
   "Périmés",
   "À retirer",
 ] as const;
@@ -229,7 +230,9 @@ export default function Suivi() {
           ? "Lot marqué périmé."
           : status === BatchStatus.NON_CONFORME
             ? "Lot marqué non conforme."
-            : "",
+            : status === BatchStatus.EN_VENTE
+              ? "Lot mis en vente !"
+              : "",
       );
       fetchBatches(0);
     }
@@ -270,10 +273,13 @@ export default function Suivi() {
       if (typeFilter && b.products.category !== typeFilter) return false;
       if (filter === "Actifs")
         return (
-          b.status === BatchStatus.STOCK || b.status === BatchStatus.OUVERT
+          b.status === BatchStatus.STOCK ||
+          b.status === BatchStatus.OUVERT ||
+          b.status === BatchStatus.EN_VENTE
         );
       if (filter === "En stock") return b.status === BatchStatus.STOCK;
       if (filter === "Ouverts") return b.status === BatchStatus.OUVERT;
+      if (filter === "En vente") return b.status === BatchStatus.EN_VENTE;
       if (filter === "Périmés") return b.status === BatchStatus.PERIME;
       if (filter === "À retirer") {
         if (b.withdrawal_date || b.expiration_date) {
