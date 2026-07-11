@@ -229,7 +229,9 @@ export default function Suivi() {
           ? "Lot marqué périmé."
           : status === BatchStatus.NON_CONFORME
             ? "Lot marqué non conforme."
-            : "",
+            : status === BatchStatus.EN_VENTE
+              ? "Lot mis en vente !"
+              : "",
       );
       fetchBatches(0);
     }
