@@ -9,6 +9,7 @@ import {
 } from "../../utils/dates";
 import FreshnessMeter from "./FreshnessMeter";
 import BottomSheet, { BottomSheetProps } from "../BottomSheet";
+import EditLotModal, { EditLotUpdates } from "./EditLotModal";
 
 type SheetType = "perime" | "non_conforme" | "epuise" | "supprimer";
 
@@ -50,6 +51,7 @@ export interface LotCardProps {
   onUpdateStatus: (id: string, status: BatchStatus, reason?: string) => void;
   onDelete: (id: string) => void;
   onUndo: (batch: Batch) => void;
+  onEdit: (id: string, updates: EditLotUpdates) => void;
 }
 
 export default function LotCard({
@@ -59,8 +61,10 @@ export default function LotCard({
   onUpdateStatus,
   onDelete,
   onUndo,
+  onEdit,
 }: LotCardProps) {
   const [sheet, setSheet] = useState<SheetType | null>(null);
+  const [showEdit, setShowEdit] = useState(false);
   const navigate = useNavigate();
   const { id: shopId } = useParams();
 
@@ -131,11 +135,23 @@ export default function LotCard({
               </span>
             </p>
           </div>
-          <span
-            className={`shrink-0 text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${statusInfo.bg} ${statusInfo.text} border-current/10`}
-          >
-            {statusInfo.label}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                setShowEdit(true);
+              }}
+              className="text-amber-600 hover:text-teal-700 text-sm px-1"
+              aria-label="Modifier le lot"
+            >
+              ✏️
+            </button>
+            <span
+              className={`text-[10px] font-bold uppercase tracking-wider px-2.5 py-1 rounded-full border ${statusInfo.bg} ${statusInfo.text} border-current/10`}
+            >
+              {statusInfo.label}
+            </span>
+          </div>
         </div>
 
         {/* Jauge de fraîcheur */}
@@ -261,6 +277,16 @@ export default function LotCard({
         {...(sheet ? SHEET_CONFIG[sheet] : SHEET_CONFIG.perime)}
         onConfirm={handleConfirm}
         onCancel={() => setSheet(null)}
+      />
+
+      <EditLotModal
+        open={showEdit}
+        batch={batch}
+        onSave={(id, updates) => {
+          onEdit(id, updates);
+          setShowEdit(false);
+        }}
+        onCancel={() => setShowEdit(false)}
       />
     </>
   );

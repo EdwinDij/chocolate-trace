@@ -17,6 +17,7 @@ import { archiveBatch } from "../../utils/historic";
 import { Batch, BatchStatus } from "../../types/batch";
 import { useShop } from "../../context/ShopContext";
 import LotCard from "../../components/lotCard/LotCard";
+import { EditLotUpdates } from "../../components/lotCard/EditLotModal";
 
 const FILTERS = [
   "Actifs",
@@ -236,6 +237,19 @@ export default function Suivi() {
       );
       fetchBatches(0);
     }
+  };
+
+  const editBatch = async (id: string, updates: EditLotUpdates) => {
+    const { error } = await supabase
+      .from("batches")
+      .update(updates)
+      .eq("id", id);
+    if (error) {
+      showToast("Erreur lors de la modification.", "error");
+      return;
+    }
+    showToast("Lot modifié avec succès !");
+    fetchBatches(0);
   };
 
   const deleteBatch = async (id: string) => {
@@ -728,6 +742,7 @@ export default function Suivi() {
                 onUpdateStatus={updateStatus}
                 onDelete={deleteBatch}
                 onUndo={undoLastAction}
+                onEdit={editBatch}
               />
             ))
           )}
