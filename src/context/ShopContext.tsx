@@ -9,6 +9,7 @@ interface Shop {
   work: string;
   owner_id: string;
   onboarded: boolean;
+  plan: Plan;
 }
 
 interface ShopMember {
@@ -72,28 +73,15 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     try {
       setError(null);
 
-      // 1. Charge le plan depuis subscriptions
-      const { data: subData, error: subError } = await supabase
-        .from("subscriptions")
-        .select("plan")
-        .eq("user_id", userId)
-        .single();
-
-      if (subError && subError.code !== "PGRST116") {
-        // PGRST116 = no rows found, pas une vraie erreur
-        console.warn("Erreur subscription:", subError);
-      }
-      if (subData?.plan) setPlan(subData.plan as Plan);
-
-      // 2. Charge les boutiques owned
+      // 1. Charge les boutiques owned
       const { data: ownedShops, error: ownedError } = await supabase
         .from("shops")
-        .select("id, name, work, owner_id, onboarded")
+        .select("id, name, work, owner_id, onboarded, plan")
         .eq("owner_id", userId);
 
       if (ownedError) throw new Error("Impossible de charger vos boutiques.");
 
-      // 3. Charge les boutiques membre
+      // 2. Charge les boutiques membre
       const { data: memberData, error: memberError } = await supabase
         .from("shop_member")
         .select("shop_id, role")
@@ -107,7 +95,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
       if (memberShopIds.length > 0) {
         const { data, error: memberShopsError } = await supabase
           .from("shops")
-          .select("id, name, work, owner_id, onboarded")
+          .select("id, name, work, owner_id, onboarded, plan")
           .in("id", memberShopIds);
 
         if (memberShopsError) throw new Error("Impossible de charger vos boutiques membre.");
@@ -140,6 +128,7 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
 
   const selectShop = async (userId: string, selectedShop: Shop) => {
     setShop(selectedShop);
+    setPlan(selectedShop.plan || "gratuit");
 
     if (selectedShop.owner_id === userId) {
       setMember({ role: "gerant", shop_id: selectedShop.id });
@@ -168,10 +157,13 @@ export function ShopProvider({ children }: { children: React.ReactNode }) {
     if (!shop || !user) return;
     const { data } = await supabase
       .from("shops")
-      .select("id, name, work, owner_id, onboarded")
+      .select("id, name, work, owner_id, onboarded, plan")
       .eq("id", shop.id)
       .single();
-    if (data) setShop(data);
+    if (data) {
+      setShop(data);
+      setPlan(data.plan || "gratuit");
+    }
   };
 
   return (
